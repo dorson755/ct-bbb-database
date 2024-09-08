@@ -38,9 +38,9 @@ app.get('/api/getMeetings', async (req, res) => {
 
 // Route to proxy the `joinMeeting` API call using `bbb-context-id`
 app.get('/api/joinMeeting', async (req, res) => {
-    const { bbbContextId, fullName, password } = req.query;
+    const { bbbContextId, fullName } = req.query;
 
-    const apiCall = `join?fullName=${fullName}&bbb-context-id=${bbbContextId}&password=${password}`;
+    const apiCall = `join?fullName=${fullName}&bbb-context-id=${bbbContextId}`;
     const checksum = generateChecksum(apiCall);
 
     const bbbApiUrl = `${BBB_URL}${apiCall}&checksum=${checksum}`;
@@ -55,9 +55,9 @@ app.get('/api/joinMeeting', async (req, res) => {
 
 // Route to proxy the `endMeeting` API call using `bbb-context-id`
 app.get('/api/endMeeting', async (req, res) => {
-    const { bbbContextId, password } = req.query;
+    const { bbbContextId } = req.query;
 
-    const apiCall = `end?bbb-context-id=${bbbContextId}&password=${password}`;
+    const apiCall = `end?bbb-context-id=${bbbContextId}`;
     const checksum = generateChecksum(apiCall);
 
     const bbbApiUrl = `${BBB_URL}${apiCall}&checksum=${checksum}`;
