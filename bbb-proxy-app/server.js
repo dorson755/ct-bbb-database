@@ -1,95 +1,52 @@
-const express = require('express');
-const fetch = require('node-fetch'); // For making HTTP requests
-const crypto = require('crypto');    // For generating the SHA-1 checksum
-const cors = require('cors');        // To handle CORS with the frontend
+import express from 'express';
+import crypto from 'crypto';
+import cors from 'cors';
+import fetch from 'node-fetch'; // Using dynamic import method if necessary
 
 const app = express();
 const PORT = 5000;
 
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
 
 // BBB API configuration
-const BBB_URL = 'https://bbb.cybertech242-online.com/bigbluebutton/api/';
+const BBB_URL = 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Remove trailing slash
 const BBB_SECRET = '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4';
 
 // Function to generate SHA-1 checksum
-const generateChecksum = (apiCall) => {
-  return crypto.createHash('sha1').update(apiCall + BBB_SECRET).digest('hex');
+const generateChecksum = (apiCall, params) => {
+  // Concatenate parameters and secret
+  const data = `${apiCall}${params}${BBB_SECRET}`;
+  return crypto.createHash('sha1').update(data).digest('hex');
 };
 
-// Route to proxy the `getMeetings` API call using `bbb-context-id`
-app.get('/api/getMeetings', async (req, res) => {
-    const apiCall = 'getMeetings';
-
-    // Generate checksum
-    const checksum = generateChecksum(apiCall);
-
-    // Construct BBB API URL with checksum
-    const bbbApiUrl = `${BBB_URL}${apiCall}?checksum=${checksum}`;
-
-    try {
-        const response = await fetch(bbbApiUrl);
-        const data = await response.text();
-        res.send(data);  // Send BBB response back to frontend
-    } catch (error) {
-        res.status(500).send('Error fetching meetings from BBB API');
-    }
-});
-
-// Route to proxy the `joinMeeting` API call using `bbb-context-id`
-app.get('/api/joinMeeting', async (req, res) => {
-    const { bbbContextId, fullName } = req.query;
-
-    const apiCall = `join?fullName=${fullName}&bbb-context-id=${bbbContextId}`;
-    const checksum = generateChecksum(apiCall);
-
-    const bbbApiUrl = `${BBB_URL}${apiCall}&checksum=${checksum}`;
-
-    try {
-        const response = await fetch(bbbApiUrl);
-        res.redirect(response.url);  // Redirect to the BBB meeting
-    } catch (error) {
-        res.status(500).send('Error joining meeting');
-    }
-});
-
-// Route to proxy the `endMeeting` API call using `bbb-context-id`
-app.get('/api/endMeeting', async (req, res) => {
-    const { bbbContextId } = req.query;
-
-    const apiCall = `end?bbb-context-id=${bbbContextId}`;
-    const checksum = generateChecksum(apiCall);
-
-    const bbbApiUrl = `${BBB_URL}${apiCall}&checksum=${checksum}`;
-
-    try {
-        const response = await fetch(bbbApiUrl);
-        const data = await response.text();
-        res.send(data);  // Send the result back to the frontend
-    } catch (error) {
-        res.status(500).send('Error ending meeting');
-    }
-});
-
-// Route to proxy the `getRecordings` API call using `bbb-context-id`
+// Route to proxy the `getRecordings` API call using `meetingID`
 app.get('/api/getRecordings', async (req, res) => {
-    const { bbbContextId } = req.query;
+  const { meetingID } = req.query;
 
-    const apiCall = `getRecordings?bbb-context-id=${bbbContextId}`;
-    const checksum = generateChecksum(apiCall);
+  if (!meetingID) {
+    return res.status(400).send('Missing meetingID parameter');
+  }
 
-    const bbbApiUrl = `${BBB_URL}${apiCall}&checksum=${checksum}`;
+  // Prepare the API call parameters and checksum
+  const params = `meetingID=${meetingID}`;
+  const apiCall = 'getRecordings';
+  const checksum = generateChecksum(apiCall, params);
 
-    try {
-        const response = await fetch(bbbApiUrl);
-        const data = await response.text();
-        res.send(data);  // Send the recordings data back to the frontend
-    } catch (error) {
-        res.status(500).send('Error fetching recordings');
-    }
+  // Construct the BBB API URL
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${params}&checksum=${checksum}`;
+
+  try {
+    const response = await fetch(bbbApiUrl);
+    const data = await response.text();
+    res.send(data);
+    console.log(`Checksum: ${checksum}`);
+    console.log('Constructed BBB API URL:', bbbApiUrl);
+  } catch (error) {
+    console.error('Error fetching recordings from BBB API:', error);
+    res.status(500).send('Error fetching recordings from BBB API');
+  }
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import './App.css'; // Import your CSS file
+
 
 const ApiTestPage = () => {
   const [contextId, setContextId] = useState('');
@@ -14,8 +16,11 @@ const ApiTestPage = () => {
 
     try {
       const response = await fetch(`http://localhost:5000/api/getRecordings?bbbContextId=${contextId}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       const data = await response.json();
-      setRecordings(data.recordings); // Assuming the response contains recordings
+      setRecordings(data.recordings || []); // Ensure `recordings` is an array
       setError(null); // Clear any previous errors
     } catch (err) {
       console.error('Error fetching recordings:', err);
@@ -61,7 +66,7 @@ const calculateDuration = (startTime, endTime) => {
 
 // Component for rendering individual recordings
 const RecordingCard = ({ recording }) => {
-  const startTime = new Date(parseInt(recording.startTime)).toLocaleString();
+  const startTime = new Date(recording.startTime).toLocaleString();
   const duration = calculateDuration(recording.startTime, recording.endTime);
 
   return (
