@@ -1,28 +1,53 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import ApiTestPage from './ApiTestPage'; // Import the API testing page
-import './App.css'; // Import your CSS file
+import './App.css'; // Import custom styles
 
 const App = () => {
   return (
-    <Router>
-      <div className="App">
-        {/* Top-right Test API button */}
-        <header>
-          <Link to="/api-test" className="test-api-button">
-            Test API
-          </Link>
-        </header>
-
-        {/* Define routes */}
-        <Switch>
-          <Route path="/api-test" component={ApiTestPage} />
-          <Route path="/" exact>
-            <h1>Welcome to the BigBlueButton API App</h1>
-          </Route>
-        </Switch>
+    <div className="app-container">
+      {/* Sidebar */}
+      <div className="sidebar">
+        <ul>
+          <li><img src='/assets/home.png' alt="Home" className="sidebar-logo" /></li>
+          <li><img src='/assets/live.png' alt="Live Classes" className="sidebar-logo" /></li>
+          <li><img src='/assets/records.png' alt="Recordings" className="sidebar-logo" /></li>
+          <li><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></li>
+          <li><img src='/assets/site.png' alt="Main Site" className="sidebar-logo" /></li>
+        </ul>
       </div>
-    </Router>
+
+      {/* Main Content */}
+      <div className="main-content">
+        <h1>Homepage</h1>
+
+        <div className="card-container">
+          {/* Card 1 */}
+          <div className="card">
+            <h3>Live Classes</h3>
+            <img src='/assets/live.gif' alt="Live Classes" className="card-img" />
+          </div>
+
+          {/* Card 2 */}
+          <div className="card">
+            <h3>Recordings</h3>
+            <img src='/assets/records.gif' alt="Recordings" className="card-img" />
+          </div>
+
+          {/* Card 3 */}
+          <div className="card">
+            <h3>Schedule</h3>
+            <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
+          </div>
+
+          {/* Card 4 */}
+          <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
+          <div className="card">
+            <h3>Site</h3>
+            <img src='/assets/site.gif' alt="Main Site" className="card-img" />
+          </div>
+          </a>
+        </div>
+      </div>
+    </div>
   );
 };
 

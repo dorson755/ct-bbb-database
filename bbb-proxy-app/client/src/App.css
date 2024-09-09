@@ -1,81 +1,80 @@
-/* src/App.css */
-.test-api-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 16px;
-}
-
-.test-api-button:hover {
-  background-color: #0056b3;
-}
-
-.api-test-page {
-  padding: 20px;
-}
-
-.error {
-  color: red;
-}
-
-input {
-  padding: 10px;
-  margin-right: 10px;
-  font-size: 16px;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-}
-
-button:hover {
-  background-color: #218838;
-}
-
-.recordings-list {
+/* Layout for the app */
+.app-container {
   display: flex;
-  flex-wrap: wrap;
-  margin-top: 20px;
 }
 
-.recording-card {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
+/* Sidebar styles */
+.sidebar {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 100px;
+  height: auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   padding: 20px;
-  margin: 10px;
-  width: 300px;
+  color: rgb(5, 171, 248);
 }
 
-.recording-card h3 {
-  margin-top: 0;
+/*Sidebar logo*/
+.sidebar-logo {
+  width: 75%; /* 75% of the width of its parent (the sidebar) */
+  display: block; /* Ensure it behaves as a block element */
+  margin: 0 auto; /* Center the image horizontally */
 }
 
-.recording-card p {
-  margin: 5px 0;
+/* Adjust the padding for the sidebar list */
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
 }
 
-.recording-card button {
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+.sidebar li {
+  margin: 20px 0;
 }
 
-.recording-card button:hover {
-  background-color: #0056b3;
+/* Main content styles */
+.main-content {
+  flex: 1;
+  margin-left: 150px; /* 100px for the sidebar + 50px spacing */
+  padding: 20px;
+  color: rgb(5, 171, 248)
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 cards per row */
+  gap: 20px;
+}
+
+.card {
+  background-color: #f8f8ff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure the image in the card fits within the card and maintains aspect ratio */
+.card-img {
+  max-width: 80vw; /* Adjust this value as needed */
+  max-height: 30vh; /* Adjust this value as needed */
+  object-fit: contain; /* Ensures the image is contained within its box */
+  display: block; /* Ensures images are block-level elements */
+  margin: 0 auto; /* Centers the image horizontally */
+}
+
+
+/* Responsive: Stack the cards on small screens */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0; /* Remove margin on smaller screens */
+    padding-left: 100px; /* Ensure main content doesn't overlap with the sidebar */
+  }
+
+  .card-container {
+    grid-template-columns: 1fr; /* 1 card per row on small screens */
+  }
 }

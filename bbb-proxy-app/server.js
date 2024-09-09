@@ -9,38 +9,40 @@ const PORT = 5000;
 app.use(cors());
 
 // BBB API configuration
-const BBB_URL = 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Remove trailing slash
+const BBB_URL = 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Base URL without trailing slash
 const BBB_SECRET = '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4';
 
-// Function to generate SHA-1 checksum
+// Function to generate checksum
 const generateChecksum = (apiCall, params) => {
-  // Concatenate parameters and secret
-  const data = `${apiCall}${params}${BBB_SECRET}`;
-  return crypto.createHash('sha1').update(data).digest('hex');
+  const queryString = new URLSearchParams(params).toString();
+  const stringToHash = `${apiCall}${queryString}${BBB_SECRET}`;
+  return crypto.createHash('sha1').update(stringToHash).digest('hex');
 };
 
-// Route to proxy the `getRecordings` API call using `meetingID`
+// Route to proxy the `getRecordings` API call, with or without `meetingID`
 app.get('/api/getRecordings', async (req, res) => {
   const { meetingID } = req.query;
 
-  if (!meetingID) {
-    return res.status(400).send('Missing meetingID parameter');
+  const apiCall = 'getRecordings';
+  const params = {};
+
+  // Add `meetingID` to params only if it exists
+  if (meetingID) {
+    params['meetingID'] = meetingID;
   }
 
-  // Prepare the API call parameters and checksum
-  const params = `meetingID=${meetingID}`;
-  const apiCall = 'getRecordings';
+  // Generate the checksum based on the params
   const checksum = generateChecksum(apiCall, params);
+  const queryString = new URLSearchParams(params).toString();
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
 
-  // Construct the BBB API URL
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?${params}&checksum=${checksum}`;
+  // Log the constructed BBB API URL
+  console.log('Constructed BBB API URL:', bbbApiUrl);
 
   try {
     const response = await fetch(bbbApiUrl);
     const data = await response.text();
     res.send(data);
-    console.log(`Checksum: ${checksum}`);
-    console.log('Constructed BBB API URL:', bbbApiUrl);
   } catch (error) {
     console.error('Error fetching recordings from BBB API:', error);
     res.status(500).send('Error fetching recordings from BBB API');
