@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css'; // Import custom styles
 import LiveClasses from './LiveClasses'; // Import Live Classes component
 
@@ -22,37 +22,39 @@ const App = () => {
 
         {/* Main Content with Routes */}
         <div className="main-content">
-          <Switch>
+          <Routes>
             {/* Home Route */}
-            <Route path="/" exact>
-              <h1>Homepage</h1>
-              <div className="card-container">
-                <div className="card">
-                  <h3>Live Classes</h3>
-                  <img src='/assets/live.gif' alt="Live Classes" className="card-img" />
-                </div>
-                <div className="card">
-                  <h3>Recordings</h3>
-                  <img src='/assets/records.gif' alt="Recordings" className="card-img" />
-                </div>
-                <div className="card">
-                  <h3>Schedule</h3>
-                  <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
-                </div>
-                <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
+            <Route path="/" element={
+              <>
+                <h1>Homepage</h1>
+                <div className="card-container">
+                  <Link to="/live-classes">
                   <div className="card">
-                    <h3>Site</h3>
-                    <img src='/assets/site.gif' alt="Main Site" className="card-img" />
+                    <h3>Live Classes</h3>
+                    <img src='/assets/live.gif' alt="Live Classes" className="card-img" />
                   </div>
-                </a>
-              </div>
-            </Route>
+                  </Link>
+                  <div className="card">
+                    <h3>Recordings</h3>
+                    <img src='/assets/records.gif' alt="Recordings" className="card-img" />
+                  </div>
+                  <div className="card">
+                    <h3>Schedule</h3>
+                    <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
+                  </div>
+                  <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
+                    <div className="card">
+                      <h3>Site</h3>
+                      <img src='/assets/site.gif' alt="Main Site" className="card-img" />
+                    </div>
+                  </a>
+                </div>
+              </>
+            } />
 
             {/* Live Classes Route */}
-            <Route path="/live-classes">
-              <LiveClasses />
-            </Route>
-          </Switch>
+            <Route path="/live-classes" element={<LiveClasses />} />
+          </Routes>
         </div>
       </div>
     </Router>
