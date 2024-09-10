@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css'; // Import custom styles
 import LiveClasses from './LiveClasses'; // Import Live Classes component
+import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
 
 const App = () => {
   return (
@@ -54,6 +55,9 @@ const App = () => {
 
             {/* Live Classes Route */}
             <Route path="/live-classes" element={<LiveClasses />} />
+            
+            {/* Recordings Page Route */}
+            <Route path="/recordings" element={<RecordingsPage />} />            
           </Routes>
         </div>
       </div>
