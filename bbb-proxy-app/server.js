@@ -6,13 +6,13 @@ import fetch from 'node-fetch'; // Using dynamic import method if necessary
 const app = express();
 const PORT = 5000;
 
-app.use(cors());
+app.use(cors()); // Enable CORS for all routes
 
 // BBB API configuration
 const BBB_URL = 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Base URL without trailing slash
 const BBB_SECRET = '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4';
 
-// Function to generate checksum
+// Function to generate SHA-1 checksum
 const generateChecksum = (apiCall, params) => {
   const queryString = new URLSearchParams(params).toString();
   const stringToHash = `${apiCall}${queryString}${BBB_SECRET}`;
@@ -49,6 +49,26 @@ app.get('/api/getRecordings', async (req, res) => {
   }
 });
 
+// Route to proxy the `getMeetings` API call
+app.get('/api/getMeetings', async (req, res) => {
+  const apiCall = 'getMeetings';
+  const params = {}; // No parameters needed for getMeetings API call
+  const checksum = generateChecksum(apiCall, params);
+
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?checksum=${checksum}`;
+  console.log('Constructed BBB API URL for getMeetings:', bbbApiUrl); // For debugging
+
+  try {
+    const response = await fetch(bbbApiUrl);
+    const data = await response.text();
+    res.send(data); // Send the XML response back to the frontend
+  } catch (error) {
+    console.error('Error fetching meetings from BBB API:', error);
+    res.status(500).send('Error fetching meetings from BBB API');
+  }
+});
+
+// Start the server
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });
