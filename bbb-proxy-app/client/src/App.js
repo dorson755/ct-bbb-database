@@ -13,7 +13,7 @@ const App = () => {
           <ul>
             <li><Link to="/"><img src='/assets/home.png' alt="Home" className="sidebar-logo" /></Link></li>
             <li><Link to="/live-classes"><img src='/assets/live.png' alt="Live Classes" className="sidebar-logo" /></Link></li>
-            <li><img src='/assets/records.png' alt="Recordings" className="sidebar-logo" /></li>
+            <li><Link to="/recordings"><img src='/assets/records.png' alt="Recordings" className="sidebar-logo" /></Link></li>
             <li><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></li>
             <li><a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
               <img src='/assets/site.png' alt="Main Site" className="sidebar-logo" />
@@ -35,10 +35,12 @@ const App = () => {
                     <img src='/assets/live.gif' alt="Live Classes" className="card-img" />
                   </div>
                   </Link>
+                  <Link to="/recordings">
                   <div className="card">
                     <h3>Recordings</h3>
                     <img src='/assets/records.gif' alt="Recordings" className="card-img" />
                   </div>
+                  </Link>
                   <div className="card">
                     <h3>Schedule</h3>
                     <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
@@ -55,7 +57,7 @@ const App = () => {
 
             {/* Live Classes Route */}
             <Route path="/live-classes" element={<LiveClasses />} />
-            
+
             {/* Recordings Page Route */}
             <Route path="/recordings" element={<RecordingsPage />} />            
           </Routes>
