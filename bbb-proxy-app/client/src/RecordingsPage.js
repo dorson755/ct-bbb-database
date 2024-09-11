@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './RecordingsPage.css'
 
 const RecordingsPage = () => {
   const [recordings, setRecordings] = useState([]);
