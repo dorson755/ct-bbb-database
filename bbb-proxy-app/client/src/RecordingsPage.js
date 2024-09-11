@@ -49,6 +49,7 @@ const RecordingsPage = () => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentRecordings = filteredRecordings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredRecordings.length / itemsPerPage);
 
   // Handle pagination
   const handlePageChange = (pageNumber) => {
@@ -91,6 +92,50 @@ const RecordingsPage = () => {
       return recording.startTime.toDateString() === selectedDate.toDateString();
     });
     setFilteredRecordings(filteredByDate);
+  };
+
+  // Render pagination with custom logic (4 pages ahead and behind current page)
+  const renderPagination = () => {
+    const paginationItems = [];
+    const ellipsis = <span key="dots">...</span>;
+
+    const startPage = Math.max(currentPage - 4, 1);  // 4 pages back
+    const endPage = Math.min(currentPage + 4, totalPages);  // 4 pages ahead
+
+    // Always show the first page and ellipsis if necessary
+    if (startPage > 1) {
+      paginationItems.push(
+        <button key={1} onClick={() => handlePageChange(1)} className={currentPage === 1 ? 'active' : ''}>
+          1
+        </button>
+      );
+      if (startPage > 2) paginationItems.push(ellipsis);  // Ellipsis between page 1 and startPage
+    }
+
+    // Pages within the current range (4 before and 4 after)
+    for (let i = startPage; i <= endPage; i++) {
+      paginationItems.push(
+        <button key={i} onClick={() => handlePageChange(i)} className={currentPage === i ? 'active' : ''}>
+          {i}
+        </button>
+      );
+    }
+
+    // Show ellipsis before the last page if needed
+    if (endPage < totalPages - 1) {
+      paginationItems.push(ellipsis);
+    }
+
+    // Always show the last page if it's not already included
+    if (endPage < totalPages) {
+      paginationItems.push(
+        <button key={totalPages} onClick={() => handlePageChange(totalPages)} className={currentPage === totalPages ? 'active' : ''}>
+          {totalPages}
+        </button>
+      );
+    }
+
+    return paginationItems;
   };
 
   return (
@@ -147,11 +192,7 @@ const RecordingsPage = () => {
 
       {/* Pagination controls */}
       <div className="pagination">
-        {[...Array(Math.ceil(filteredRecordings.length / itemsPerPage)).keys()].map(page => (
-          <button key={page + 1} onClick={() => handlePageChange(page + 1)}>
-            {page + 1}
-          </button>
-        ))}
+        {renderPagination()}
       </div>
     </div>
   );
