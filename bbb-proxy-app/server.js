@@ -68,6 +68,42 @@ app.get('/api/getMeetings', async (req, res) => {
   }
 });
 
+// Route to proxy the `join` API call
+app.get('/api/joinMeeting', async (req, res) => {
+  const { fullName, meetingID, role } = req.query;
+
+  // Ensure required parameters are provided
+  if (!fullName || !meetingID || !role) {
+    return res.status(400).send('Missing required parameters: fullName, meetingID, or role');
+  }
+
+  const apiCall = 'join';
+  const params = {
+    fullName,
+    meetingID,
+    role,
+    excludeFromDashboard: 'true', // Always exclude from the dashboard
+    redirect: 'true' // Ensures the user is redirected to the BBB client
+  };
+
+  // Generate the checksum based on the params
+  const checksum = generateChecksum(apiCall, params);
+  const queryString = new URLSearchParams(params).toString();
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
+
+  // Log the constructed BBB API URL
+  console.log('Constructed BBB Join API URL:', bbbApiUrl);
+
+  try {
+    res.send({ url: bbbApiUrl }); // Send the join URL back to the frontend
+  } catch (error) {
+    console.error('Error generating join URL for BBB:', error);
+    res.status(500).send('Error generating join URL');
+  }
+});
+
+
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);

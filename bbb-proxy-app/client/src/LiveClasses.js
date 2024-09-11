@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import './LiveClasses.css'
+import './LiveClasses.css';
 
 const LiveClasses = () => {
   const [meetings, setMeetings] = useState([]);
   const [error, setError] = useState(null);
+  const [fullName, setFullName] = useState(''); // Store the full name entered by the user
 
   // Fetch live meetings using the getMeetings API call
   const fetchMeetings = async () => {
@@ -11,22 +12,22 @@ const LiveClasses = () => {
       const response = await fetch('http://localhost:5000/api/getMeetings'); // Replace with your backend URL
       const data = await response.text();
       const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(data, "text/xml");
-      
+      const xmlDoc = parser.parseFromString(data, 'text/xml');
+
       // Parse the XML to get meeting details
-      const meetingNodes = xmlDoc.getElementsByTagName("meeting");
+      const meetingNodes = xmlDoc.getElementsByTagName('meeting');
       const meetingsArray = Array.from(meetingNodes).map((meeting) => ({
-        bbbContextName: meeting.getElementsByTagName("bbb-context-name")[0]?.textContent,
-        meetingID: meeting.getElementsByTagName("meetingID")[0]?.textContent,
-        createDate: meeting.getElementsByTagName("createDate")[0]?.textContent,
-        participantCount: meeting.getElementsByTagName("participantCount")[0]?.textContent,
+        bbbContextName: meeting.getElementsByTagName('bbb-context-name')[0]?.textContent,
+        meetingID: meeting.getElementsByTagName('meetingID')[0]?.textContent,
+        createDate: meeting.getElementsByTagName('createDate')[0]?.textContent,
+        participantCount: meeting.getElementsByTagName('participantCount')[0]?.textContent,
       }));
-      
+
       setMeetings(meetingsArray);
       setError(null);
     } catch (err) {
-      console.error("Error fetching meetings:", err);
-      setError("Error fetching meetings. Please try again later.");
+      console.error('Error fetching meetings:', err);
+      setError('Error fetching meetings. Please try again later.');
     }
   };
 
@@ -34,11 +35,45 @@ const LiveClasses = () => {
     fetchMeetings();
   }, []);
 
+  // Handle joining the meeting
+  const handleJoinMeeting = async (meetingID, role) => {
+    if (!fullName) {
+      alert('Please enter your full name to join the class');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meetingID)}&role=${encodeURIComponent(role)}`
+      );
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url; // Redirect to the generated BBB join URL
+      }
+    } catch (err) {
+      console.error('Error joining meeting:', err);
+      alert('Error joining the meeting. Please try again.');
+    }
+  };
+
   return (
     <div className="live-classes-container">
       <h1>Live Classes</h1>
 
       {error && <p className="error">{error}</p>}
+
+      {/* Input field for entering the user's name */}
+      <div className="name-input-container">
+        <label htmlFor="fullName">Enter your full name:</label>
+        <input
+          type="text"
+          id="fullName"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Full Name"
+        />
+      </div>
 
       <div className="card-container">
         {meetings.length > 0 ? (
@@ -47,7 +82,20 @@ const LiveClasses = () => {
               <h3>{meeting.bbbContextName}</h3>
               <p><strong>Created on:</strong> {meeting.createDate}</p>
               <p><strong>Participants:</strong> {meeting.participantCount}</p>
-              <button className="join-btn" onClick={() => handleJoinMeeting(meeting.meetingID)}>Join</button>
+
+              {/* Buttons for joining as a Viewer or Moderator */}
+              <button
+                className="join-btn"
+                onClick={() => handleJoinMeeting(meeting.meetingID, 'VIEWER')}
+              >
+                Join as Viewer
+              </button>
+              <button
+                className="join-btn"
+                onClick={() => handleJoinMeeting(meeting.meetingID, 'MODERATOR')}
+              >
+                Join as Moderator
+              </button>
             </div>
           ))
         ) : (
@@ -56,11 +104,6 @@ const LiveClasses = () => {
       </div>
     </div>
   );
-};
-
-const handleJoinMeeting = (meetingID) => {
-  const joinUrl = `https://bbb.cybertech242-online.com/bigbluebutton/api/join?meetingID=${meetingID}`;
-  window.location.href = joinUrl; // Redirect to the meeting join URL
 };
 
 export default LiveClasses;
