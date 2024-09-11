@@ -103,6 +103,36 @@ app.get('/api/joinMeeting', async (req, res) => {
 });
 
 
+// Route to proxy the `deleteRecordings` API call
+app.get('/api/deleteRecordings', async (req, res) => {
+  const { recordID } = req.query;
+
+  if (!recordID) {
+    return res.status(400).send('Missing recordID parameter');
+  }
+
+  const apiCall = 'deleteRecordings';
+  const params = { recordID };
+  const checksum = generateChecksum(apiCall, params);
+  const queryString = new URLSearchParams(params).toString();
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
+
+  console.log('Constructed BBB Delete API URL:', bbbApiUrl); // For debugging
+
+  try {
+    const response = await fetch(bbbApiUrl);
+    if (response.ok) {
+      res.send('Recordings deleted successfully');
+    } else {
+      res.status(response.status).send('Error deleting recordings');
+    }
+  } catch (error) {
+    console.error('Error deleting recordings from BBB API:', error);
+    res.status(500).send('Error deleting recordings from BBB API');
+  }
+});
+
+
 
 // Start the server
 app.listen(PORT, () => {

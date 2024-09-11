@@ -31,6 +31,7 @@ const RecordingsPage = () => {
         participantCount: recording.getElementsByTagName("participants")[0]?.textContent || "0",
         playbackUrl: recording.getElementsByTagName("url")[0]?.textContent,
         duration: (parseInt(recording.getElementsByTagName("endTime")[0]?.textContent) - parseInt(recording.getElementsByTagName("startTime")[0]?.textContent)) / 1000, // Duration in seconds
+        recordID: recording.getElementsByTagName("recordID")[0]?.textContent // Add recordID to the data
       }));
 
       // Apply default sorting by date
@@ -113,6 +114,22 @@ const RecordingsPage = () => {
   // Handle date filtering
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
+  };
+
+  // Handle delete action
+  const handleDelete = async (recordID) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/deleteRecordings?recordID=${recordID}`);
+      if (response.ok) {
+        alert('Recording deleted successfully.');
+        fetchRecordings(); // Refresh the recordings list after deletion
+      } else {
+        alert('Error deleting recording.');
+      }
+    } catch (err) {
+      console.error('Error deleting recording:', err);
+      alert('Error deleting recording. Please try again.');
+    }
   };
 
   // Render pagination with custom logic (4 pages ahead and behind current page)
@@ -204,6 +221,7 @@ const RecordingsPage = () => {
               ) : (
                 <p>No playback available</p>
               )}
+              <button onClick={() => handleDelete(recording.recordID)}>Delete Recording</button> {/* Delete button */}
             </div>
           ))
         ) : (
