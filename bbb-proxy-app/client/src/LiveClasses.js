@@ -16,7 +16,7 @@ const LiveClasses = () => {
       // Parse the XML to get meeting details
       const meetingNodes = xmlDoc.getElementsByTagName("meeting");
       const meetingsArray = Array.from(meetingNodes).map((meeting) => ({
-        meetingName: meeting.getElementsByTagName("meetingName")[0]?.textContent,
+        bbbContextName: meeting.getElementsByTagName("bbb-context-name")[0]?.textContent,
         meetingID: meeting.getElementsByTagName("meetingID")[0]?.textContent,
         createDate: meeting.getElementsByTagName("createDate")[0]?.textContent,
         participantCount: meeting.getElementsByTagName("participantCount")[0]?.textContent,
@@ -44,7 +44,7 @@ const LiveClasses = () => {
         {meetings.length > 0 ? (
           meetings.map((meeting, index) => (
             <div className="card" key={index}>
-              <h3>{meeting.meetingName}</h3>
+              <h3>{meeting.bbbContextName}</h3>
               <p><strong>Created on:</strong> {meeting.createDate}</p>
               <p><strong>Participants:</strong> {meeting.participantCount}</p>
               <button className="join-btn" onClick={() => handleJoinMeeting(meeting.meetingID)}>Join</button>
@@ -59,7 +59,7 @@ const LiveClasses = () => {
 };
 
 const handleJoinMeeting = (meetingID) => {
-  const joinUrl = `http://your-bbb-server.com/bigbluebutton/api/join?meetingID=${meetingID}`;
+  const joinUrl = `https://bbb.cybertech242-online.com/bigbluebutton/api/join?meetingID=${meetingID}`;
   window.location.href = joinUrl; // Redirect to the meeting join URL
 };
 
