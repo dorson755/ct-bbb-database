@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './RecordingsPage.css';
 
 const RecordingsPage = () => {
@@ -6,9 +6,10 @@ const RecordingsPage = () => {
   const [error, setError] = useState(null);
   const [filteredRecordings, setFilteredRecordings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   const [sortOption, setSortOption] = useState('date');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   // Fetch recordings using the getRecordings API
   const fetchRecordings = async () => {
@@ -32,8 +33,11 @@ const RecordingsPage = () => {
         duration: (parseInt(recording.getElementsByTagName("endTime")[0]?.textContent) - parseInt(recording.getElementsByTagName("startTime")[0]?.textContent)) / 1000, // Duration in seconds
       }));
 
-      setRecordings(recordingsArray);
-      setFilteredRecordings(recordingsArray);
+      // Apply default sorting by date
+      const sortedRecordings = [...recordingsArray].sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+
+      setRecordings(sortedRecordings);
+      setFilteredRecordings(sortedRecordings);
       setError(null);
     } catch (err) {
       console.error("Error fetching recordings:", err);
@@ -44,6 +48,35 @@ const RecordingsPage = () => {
   useEffect(() => {
     fetchRecordings();
   }, []);
+
+  // Memoize applyFilters to prevent unnecessary re-creations
+  const applyFilters = useCallback(() => {
+    let filtered = [...recordings];
+
+    if (searchQuery) {
+      filtered = filtered.filter(recording =>
+        recording.bbbContextName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (selectedDate) {
+      const date = new Date(selectedDate);
+      date.setDate(date.getDate() + 1); // Adjust date as needed
+
+      const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+      filtered = filtered.filter(recording =>
+        recording.startTime >= startOfDay && recording.endTime <= endOfDay
+      );
+    }
+
+    setFilteredRecordings(filtered);
+  }, [recordings, searchQuery, selectedDate]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -74,24 +107,12 @@ const RecordingsPage = () => {
 
   // Handle search filtering
   const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    const searchResults = recordings.filter(recording =>
-      recording.bbbContextName.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredRecordings(searchResults);
+    setSearchQuery(e.target.value);
   };
 
   // Handle date filtering
   const handleDateChange = (e) => {
-    const selectedDate = new Date(e.target.value);
-
-    const filteredByDate = recordings.filter(recording => {
-      // Compare the selected date and recording date (ignoring the time part)
-      return recording.startTime.toDateString() === selectedDate.toDateString();
-    });
-    setFilteredRecordings(filteredByDate);
+    setSelectedDate(e.target.value);
   };
 
   // Render pagination with custom logic (4 pages ahead and behind current page)
@@ -163,8 +184,8 @@ const RecordingsPage = () => {
         </select>
 
         <select onChange={(e) => setItemsPerPage(parseInt(e.target.value))} value={itemsPerPage}>
-          <option value="10">Show 10 per page</option>
-          <option value="20">Show 20 per page</option>
+          <option value="12">Show 12 per page</option>
+          <option value="24">Show 24 per page</option>
         </select>
       </div>
 

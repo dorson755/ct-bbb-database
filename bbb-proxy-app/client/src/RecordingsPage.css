@@ -89,3 +89,8 @@
   word-wrap: break-word;
   word-break: break-word;
 }
+
+a {
+  color: inherit; /* Inherit color from parent element */
+  text-decoration: none; /* Remove underline */
+}
