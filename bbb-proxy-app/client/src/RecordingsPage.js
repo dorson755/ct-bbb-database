@@ -18,7 +18,7 @@ const RecordingsPage = () => {
       // Parse XML response to extract recordings
       const recordingNodes = xmlDoc.getElementsByTagName("recording");
       const recordingsArray = Array.from(recordingNodes).map((recording) => ({
-        bbbContextName: recording.getElementsByTagName("meetingName")[0]?.textContent || "N/A",
+        bbbContextName: recording.getElementsByTagName("bbb-context-name")[0]?.textContent || "N/A",
         startTime: new Date(parseInt(recording.getElementsByTagName("startTime")[0]?.textContent)).toLocaleString(),
         endTime: new Date(parseInt(recording.getElementsByTagName("endTime")[0]?.textContent)).toLocaleString(),
         participantCount: recording.getElementsByTagName("participants")[0]?.textContent || "0",
