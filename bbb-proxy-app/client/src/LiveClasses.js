@@ -19,7 +19,7 @@ const LiveClasses = () => {
       const meetingsArray = Array.from(meetingNodes).map((meeting) => ({
         bbbContextName: meeting.getElementsByTagName('bbb-context-name')[0]?.textContent,
         meetingID: meeting.getElementsByTagName('meetingID')[0]?.textContent,
-        createDate: meeting.getElementsByTagName('createDate')[0]?.textContent,
+        createTime: meeting.getElementsByTagName('createTime')[0]?.textContent, // Use createTime instead of createDate
         participantCount: meeting.getElementsByTagName('participantCount')[0]?.textContent,
       }));
 
@@ -35,26 +35,33 @@ const LiveClasses = () => {
     fetchMeetings();
   }, []);
 
-  // Handle joining the meeting
-  const handleJoinMeeting = async (meetingID, role) => {
-    if (!fullName) {
-      alert('Please enter your full name to join the class');
-      return;
-    }
+// Handle joining the meeting
+const handleJoinMeeting = async (meetingID, role) => {
+  if (!fullName) {
+    alert('Please enter your full name to join the class');
+    return;
+  }
 
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meetingID)}&role=${encodeURIComponent(role)}`
-      );
-      const data = await response.json();
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meetingID)}&role=${encodeURIComponent(role)}`
+    );
+    const data = await response.json();
 
-      if (data.url) {
-        window.location.href = data.url; // Redirect to the generated BBB join URL
-      }
-    } catch (err) {
-      console.error('Error joining meeting:', err);
-      alert('Error joining the meeting. Please try again.');
+    if (data.url) {
+      window.open(data.url, '_blank'); // Open the generated BBB join URL in a new tab
     }
+  } catch (err) {
+    console.error('Error joining meeting:', err);
+    alert('Error joining the meeting. Please try again.');
+  }
+};
+
+
+  // Helper function to format the createTime in the user's timezone
+  const formatCreateTime = (timestamp) => {
+    const date = new Date(parseInt(timestamp)); // Parse the timestamp
+    return date.toLocaleString(); // Converts to the user's local timezone and format
   };
 
   return (
@@ -80,7 +87,7 @@ const LiveClasses = () => {
           meetings.map((meeting, index) => (
             <div className="card" key={index}>
               <h3>{meeting.bbbContextName}</h3>
-              <p><strong>Created on:</strong> {meeting.createDate}</p>
+              <p><strong>Created on:</strong> {formatCreateTime(meeting.createTime)}</p> {/* Display createTime in local timezone */}
               <p><strong>Participants:</strong> {meeting.participantCount}</p>
 
               {/* Buttons for joining as a Viewer or Moderator */}
