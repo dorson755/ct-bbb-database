@@ -119,7 +119,7 @@ const RecordingsPage = () => {
   // Handle delete action
   const handleDelete = async (recordID) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/deleteRecordings?recordID=${recordID}`);
+      const response = await fetch(`https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/deleteRecordings?recordID=${recordID}`);
       if (response.ok) {
         alert('Recording deleted successfully.');
         fetchRecordings(); // Refresh the recordings list after deletion
