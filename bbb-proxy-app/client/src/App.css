@@ -65,7 +65,6 @@
   margin: 0 auto; /* Center the container */
   padding: 10px; /* Add padding to avoid cards touching screen edges */
   box-sizing: border-box; /* Include padding in the element's total width/height */
-  overflow-y: auto; /* Ensure scrolling within the container if necessary */
   height: 100vh; /* Set the height to fit the viewport */
 }
 
