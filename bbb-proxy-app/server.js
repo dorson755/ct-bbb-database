@@ -1,16 +1,22 @@
 import express from 'express';
 import crypto from 'crypto';
 import cors from 'cors';
-import fetch from 'node-fetch'; // Using dynamic import method if necessary
+import fetch from 'node-fetch';
+import path from 'path';  // Added to serve static files
+import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;  // Use process.env.PORT for Heroku
+
+// Use the directory name (needed for ES modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors()); // Enable CORS for all routes
 
 // BBB API configuration
-const BBB_URL = 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Base URL without trailing slash
-const BBB_SECRET = '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4';
+const BBB_URL = process.env.BBB_URL || 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Use environment variables for security
+const BBB_SECRET = process.env.BBB_SECRET || '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4'; // Use environment variables for security
 
 // Function to generate SHA-1 checksum
 const generateChecksum = (apiCall, params) => {
@@ -19,24 +25,20 @@ const generateChecksum = (apiCall, params) => {
   return crypto.createHash('sha1').update(stringToHash).digest('hex');
 };
 
-// Route to proxy the `getRecordings` API call, with or without `meetingID`
+// API route to get recordings
 app.get('/api/getRecordings', async (req, res) => {
   const { meetingID } = req.query;
-
   const apiCall = 'getRecordings';
   const params = {};
 
-  // Add `meetingID` to params only if it exists
   if (meetingID) {
     params['meetingID'] = meetingID;
   }
 
-  // Generate the checksum based on the params
   const checksum = generateChecksum(apiCall, params);
   const queryString = new URLSearchParams(params).toString();
   const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
 
-  // Log the constructed BBB API URL
   console.log('Constructed BBB API URL:', bbbApiUrl);
 
   try {
@@ -49,30 +51,29 @@ app.get('/api/getRecordings', async (req, res) => {
   }
 });
 
-// Route to proxy the `getMeetings` API call
+// API route to get meetings
 app.get('/api/getMeetings', async (req, res) => {
   const apiCall = 'getMeetings';
-  const params = {}; // No parameters needed for getMeetings API call
+  const params = {};
   const checksum = generateChecksum(apiCall, params);
 
   const bbbApiUrl = `${BBB_URL}/${apiCall}?checksum=${checksum}`;
-  console.log('Constructed BBB API URL for getMeetings:', bbbApiUrl); // For debugging
+  console.log('Constructed BBB API URL for getMeetings:', bbbApiUrl);
 
   try {
     const response = await fetch(bbbApiUrl);
     const data = await response.text();
-    res.send(data); // Send the XML response back to the frontend
+    res.send(data);
   } catch (error) {
     console.error('Error fetching meetings from BBB API:', error);
     res.status(500).send('Error fetching meetings from BBB API');
   }
 });
 
-// Route to proxy the `join` API call
+// API route to join a meeting
 app.get('/api/joinMeeting', async (req, res) => {
   const { fullName, meetingID, role } = req.query;
 
-  // Ensure required parameters are provided
   if (!fullName || !meetingID || !role) {
     return res.status(400).send('Missing required parameters: fullName, meetingID, or role');
   }
@@ -82,28 +83,25 @@ app.get('/api/joinMeeting', async (req, res) => {
     fullName,
     meetingID,
     role,
-    excludeFromDashboard: 'true', // Always exclude from the dashboard
-    redirect: 'true' // Ensures the user is redirected to the BBB client
+    excludeFromDashboard: 'true',
+    redirect: 'true'
   };
 
-  // Generate the checksum based on the params
   const checksum = generateChecksum(apiCall, params);
   const queryString = new URLSearchParams(params).toString();
   const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
 
-  // Log the constructed BBB API URL
   console.log('Constructed BBB Join API URL:', bbbApiUrl);
 
   try {
-    res.send({ url: bbbApiUrl }); // Send the join URL back to the frontend
+    res.send({ url: bbbApiUrl });
   } catch (error) {
     console.error('Error generating join URL for BBB:', error);
     res.status(500).send('Error generating join URL');
   }
 });
 
-
-// Route to proxy the `deleteRecordings` API call
+// API route to delete recordings
 app.get('/api/deleteRecordings', async (req, res) => {
   const { recordID } = req.query;
 
@@ -117,7 +115,7 @@ app.get('/api/deleteRecordings', async (req, res) => {
   const queryString = new URLSearchParams(params).toString();
   const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
 
-  console.log('Constructed BBB Delete API URL:', bbbApiUrl); // For debugging
+  console.log('Constructed BBB Delete API URL:', bbbApiUrl);
 
   try {
     const response = await fetch(bbbApiUrl);
@@ -132,9 +130,15 @@ app.get('/api/deleteRecordings', async (req, res) => {
   }
 });
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'client/build')));
 
+// Catch-all route to serve React frontend for any unhandled routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
