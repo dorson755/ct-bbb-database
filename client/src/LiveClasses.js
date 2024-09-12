@@ -9,7 +9,7 @@ const LiveClasses = () => {
   // Fetch live meetings using the getMeetings API call
   const fetchMeetings = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/getMeetings'); // Replace with your backend URL
+      const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getMeetings'); // Replace with your backend URL
       const data = await response.text();
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(data, 'text/xml');
@@ -44,7 +44,7 @@ const handleJoinMeeting = async (meetingID, role) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meetingID)}&role=${encodeURIComponent(role)}`
+      `https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meetingID)}&role=${encodeURIComponent(role)}`
     );
     const data = await response.json();
 
