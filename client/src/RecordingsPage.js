@@ -14,7 +14,7 @@ const RecordingsPage = () => {
   // Fetch recordings using the getRecordings API
   const fetchRecordings = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/getRecordings'); // Replace with your backend URL
+      const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getRecordings'); // Replace with your backend URL
       const data = await response.text(); // Get the raw XML response
 
       console.log("Raw XML Response:", data); // Log raw response for debugging
