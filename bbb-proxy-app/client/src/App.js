@@ -28,7 +28,7 @@ const App = () => {
             <Route path="/" element={
               <>
                 <h1>Homepage</h1>
-                <div className="card-container">
+                <div className="card-container-home">
                   <Link to="/live-classes">
                   <div className="card">
                     <h3>Live Classes</h3>

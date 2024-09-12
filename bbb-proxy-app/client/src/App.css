@@ -57,6 +57,28 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.card-container-home {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 cards per row */
+  gap: 20px; /* Adjust the gap between cards */
+  max-width: 100vw; /* Prevent the container from exceeding the screen width */
+  margin: 0 auto; /* Center the container */
+  padding: 10px; /* Add padding to avoid cards touching screen edges */
+  box-sizing: border-box; /* Include padding in the element's total width/height */
+  overflow-y: auto; /* Ensure scrolling within the container if necessary */
+  height: 100vh; /* Set the height to fit the viewport */
+}
+
+/* Small screens (e.g., tablets, phones) */
+@media (max-width: 768px) {
+  .card-container-home {
+    grid-template-columns: 1fr; /* 1 card per row */
+    gap: 10px; /* 10px margin between cards */
+  }
+}
+
+
+
 /* Ensure the image in the card fits within the card and maintains aspect ratio */
 .card-img {
   max-width: 80vw; /* Adjust this value as needed */
