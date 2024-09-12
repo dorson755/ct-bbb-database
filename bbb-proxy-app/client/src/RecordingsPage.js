@@ -214,14 +214,16 @@ const RecordingsPage = () => {
               <p><strong>Start Date:</strong> {recording.startTime.toLocaleString()}</p>
               <p><strong>Duration:</strong> {Math.floor(recording.duration / 60)} minutes</p>
               <p><strong>Participants:</strong> {recording.participantCount}</p>
-              {recording.playbackUrl ? (
-                <a href={recording.playbackUrl} target="_blank" rel="noreferrer">
-                  <button className="playback-btn">Play Recording</button>
-                </a>
-              ) : (
-                <p>No playback available</p>
-              )}
-              <button onClick={() => handleDelete(recording.recordID)}>Delete Recording</button> {/* Delete button */}
+              <div className="button-container">
+    {recording.playbackUrl ? (
+      <a href={recording.playbackUrl} target="_blank" rel="noreferrer">
+        <button className="playback-btn">Play Recording</button>
+      </a>
+      ) : (
+        <p>No playback available</p>
+      )}
+        <button className="delete-btn" onClick={() => handleDelete(recording.recordID)}>Delete Recording</button>
+      </div>
             </div>
           ))
         ) : (
