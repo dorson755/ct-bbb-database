@@ -1,31 +1,196 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './SchedulePage.css';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const SchedulePage = () => {
   const [courses, setCourses] = useState([]);
-  const [showForm, setShowForm] = useState(false); // Manage form visibility
+  const [showForm, setShowForm] = useState(false); // State to control the visibility of the form
+  const [newCourse, setNewCourse] = useState({
+    name: '',
+    startTime: '',
+    endTime: '',
+    days: [],
+    bbbContextName: '', // New field for BBB context name
+  });
+  const [liveMeetings, setLiveMeetings] = useState([]); // Store live meetings
+  const [fullName, setFullName] = useState(''); // Store the user's full name
+  const [selectedRole, setSelectedRole] = useState('VIEWER'); // Default role is Viewer
+
+  // Fetch live meetings using the getMeetings API
+  const fetchLiveMeetings = async () => {
+    try {
+      const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getMeetings'); // Replace with your backend URL
+      const data = await response.text();
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(data, 'text/xml');
+
+      const meetingNodes = xmlDoc.getElementsByTagName('meeting');
+      const meetingsArray = Array.from(meetingNodes).map((meeting) => ({
+        bbbContextName: meeting.getElementsByTagName('bbb-context-name')[0]?.textContent,
+        meetingID: meeting.getElementsByTagName('meetingID')[0]?.textContent, // Add meetingID for joining the session
+      }));
+
+      setLiveMeetings(meetingsArray);
+    } catch (error) {
+      console.error('Error fetching meetings:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveMeetings(); // Fetch live meetings when the component mounts
+  }, []);
+
+  // Handle input changes in the form
+  const handleCourseChange = (e) => {
+    const { name, value } = e.target;
+    setNewCourse({ ...newCourse, [name]: value });
+  };
+
+  // Handle changes in the day selection
+  const handleDayChange = (day) => {
+    setNewCourse((prev) => ({
+      ...prev,
+      days: prev.days.includes(day)
+        ? prev.days.filter((d) => d !== day)
+        : [...prev.days, day],
+    }));
+  };
+
+  // Handle form submission to add a new course
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setCourses([...courses, newCourse]); // Add the new course to the list
+    setShowForm(false); // Close the form
+    setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '' }); // Reset form
+  };
+
+  // Check if a course is live by comparing the bbbContextName with live meetings
+  const isCourseLive = (bbbContextName) => {
+    return liveMeetings.some((meeting) => meeting.bbbContextName === bbbContextName);
+  };
+
+  // Handle joining the meeting
+  const handleJoinMeeting = async (bbbContextName) => {
+    if (!fullName) {
+      alert('Please enter your full name to join the class');
+      return;
+    }
+
+    const meeting = liveMeetings.find((meeting) => meeting.bbbContextName === bbbContextName);
+
+    if (!meeting) {
+      alert('Meeting not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meeting.meetingID)}&role=${selectedRole}`
+      );
+      const data = await response.json();
+
+      if (data.url) {
+        window.open(data.url, '_blank'); // Open the generated BBB join URL in a new tab
+      } else {
+        alert('Error joining the meeting.');
+      }
+    } catch (error) {
+      console.error('Error joining the meeting:', error);
+      alert('Error joining the meeting. Please try again.');
+    }
+  };
 
   return (
     <div className="schedule-page">
       <h1>Class Schedule</h1>
 
-      {/* Button to open the add course form */}
+      {/* Input field for user's full name */}
+      <div className="name-input-container">
+        <label htmlFor="fullName">Enter your full name:</label>
+        <input
+          type="text"
+          id="fullName"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Full Name"
+        />
+      </div>
+
+      {/* Dropdown to select role */}
+      <div className="role-selection">
+        <label htmlFor="role">Select your role:</label>
+        <select
+          id="role"
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+        >
+          <option value="VIEWER">Viewer</option>
+          <option value="MODERATOR">Moderator</option>
+        </select>
+      </div>
+
       <button onClick={() => setShowForm(true)}>Add Course</button>
 
-      {/* Lightbox Form for adding a course */}
       {showForm && (
         <div className="lightbox">
           <div className="form-container">
             <h2>Add New Course</h2>
-            {/* Form content goes here */}
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                name="name"
+                placeholder="Class Name"
+                value={newCourse.name}
+                onChange={handleCourseChange}
+                required
+              />
+              <input
+                type="text"
+                name="bbbContextName"
+                placeholder="BBB Context Name"
+                value={newCourse.bbbContextName}
+                onChange={handleCourseChange}
+                required
+              />
+              <input
+                type="time"
+                name="startTime"
+                placeholder="Start Time"
+                value={newCourse.startTime}
+                onChange={handleCourseChange}
+                required
+              />
+              <input
+                type="time"
+                name="endTime"
+                placeholder="End Time"
+                value={newCourse.endTime}
+                onChange={handleCourseChange}
+                required
+              />
+
+              <div>
+                {daysOfWeek.map((day) => (
+                  <label key={day}>
+                    <input
+                      type="checkbox"
+                      checked={newCourse.days.includes(day)}
+                      onChange={() => handleDayChange(day)}
+                    />
+                    {day}
+                  </label>
+                ))}
+              </div>
+
+              <button type="submit">Add Course</button>
+            </form>
             <button onClick={() => setShowForm(false)}>Close</button>
           </div>
         </div>
       )}
 
-      {/* Table */}
+      {/* Table to display the schedule */}
       <table className="schedule-table">
         <thead>
           <tr>
@@ -42,7 +207,15 @@ const SchedulePage = () => {
                   .filter((course) => course.days.includes(day))
                   .map((course, index) => (
                     <div key={index} className="course">
-                      {course.name}
+                      {course.name} ({course.bbbContextName})
+                      <span
+                        className={`status-indicator ${isCourseLive(course.bbbContextName) ? 'green' : 'red'}`}
+                      ></span>
+                      {isCourseLive(course.bbbContextName) && (
+                        <button className="join-btn" onClick={() => handleJoinMeeting(course.bbbContextName)}>
+                          Join as {selectedRole}
+                        </button>
+                      )}
                     </div>
                   ))}
               </td>
