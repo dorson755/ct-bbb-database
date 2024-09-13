@@ -4,7 +4,6 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'path';  // Added to serve static files
 import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
-import mongoose from 'mongoose'; // Import mongoose for MongoDB
 
 const app = express();
 const PORT = process.env.PORT || 5000;  // Use process.env.PORT for Heroku
@@ -14,49 +13,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // Middleware to parse JSON bodies
-
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('Failed to connect to MongoDB:', err));
-
-// Define a schema and model for courses
-const courseSchema = new mongoose.Schema({
-  name: String,
-  startTime: String,
-  endTime: String,
-  days: [String],
-  bbbContextName: String,
-});
-
-const Course = mongoose.model('Course', courseSchema);
-
-// API route to save courses
-app.post('/api/courses', async (req, res) => {
-  try {
-    const newCourse = new Course(req.body);
-    await newCourse.save();
-    res.status(201).json(newCourse);
-  } catch (error) {
-    console.error('Error saving course:', error);
-    res.status(500).send('Error saving course');
-  }
-});
-
-// API route to get saved courses
-app.get('/api/courses', async (req, res) => {
-  try {
-    const courses = await Course.find();
-    res.json(courses);
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-    res.status(500).send('Error fetching courses');
-  }
-});
 
 // BBB API configuration
 const BBB_URL = process.env.BBB_URL || 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Use environment variables for security
