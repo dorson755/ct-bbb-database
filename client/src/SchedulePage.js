@@ -14,6 +14,7 @@ const SchedulePage = () => {
     endTime: '',
     days: [],
     bbbContextName: '',
+    repeatWeekly: false, // Added field for weekly recurrence
   });
   const [liveMeetings, setLiveMeetings] = useState([]);
   const [fullName, setFullName] = useState('');
@@ -54,16 +55,29 @@ const SchedulePage = () => {
     const nowEastern = new Date(now.getTime() + (easternOffset - offset) * 60 * 60 * 1000);
 
     courses.forEach(course => {
-      course.days.forEach(day => {
-        if (nowEastern.getDay() === daysOfWeek.indexOf(day)) {
-          const courseStart = new Date(`${nowEastern.toDateString()} ${course.startTime}`);
-          const timeDifference = courseStart - nowEastern;
+      const isToday = course.days.includes(daysOfWeek[nowEastern.getDay()]);
+      if (isToday) {
+        const courseStart = new Date(`${nowEastern.toDateString()} ${course.startTime}`);
+        const timeDifference = courseStart - nowEastern;
 
-          if (timeDifference > 0 && timeDifference <= 5 * 60 * 1000) {
-            setNotification(`Your class "${course.name}" is about to start in 5 minutes.`);
-          }
+        if (timeDifference > 0 && timeDifference <= 5 * 60 * 1000) {
+          setNotification(`Your class "${course.name}" is about to start in 5 minutes.`);
         }
-      });
+      }
+
+      // Handle repeating courses
+      if (course.repeatWeekly) {
+        daysOfWeek.forEach((day, index) => {
+          if (nowEastern.getDay() === index) {
+            const courseStart = new Date(`${nowEastern.toDateString()} ${course.startTime}`);
+            const timeDifference = courseStart - nowEastern;
+
+            if (timeDifference > 0 && timeDifference <= 5 * 60 * 1000) {
+              setNotification(`Your weekly class "${course.name}" is about to start in 5 minutes.`);
+            }
+          }
+        });
+      }
     });
   }, [courses]);
 
@@ -96,7 +110,7 @@ const SchedulePage = () => {
     e.preventDefault();
     setCourses([...courses, newCourse]);
     setShowForm(false);
-    setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '' });
+    setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '', repeatWeekly: false });
   };
 
   // Check if course is live
@@ -221,6 +235,14 @@ const SchedulePage = () => {
                 ))}
               </div>
 
+              <input
+                type="checkbox"
+                name="repeatWeekly"
+                checked={newCourse.repeatWeekly}
+                onChange={(e) => setNewCourse({ ...newCourse, repeatWeekly: e.target.checked })}
+              />
+              <label htmlFor="repeatWeekly">Repeat Weekly</label>
+
               <button type="submit" className="submit-btn">Add Course</button>
               <button type="button" onClick={() => setShowForm(false)} className="cancel-btn">Close</button>
             </form>
@@ -244,7 +266,7 @@ const SchedulePage = () => {
                   .filter((course) => course.days.includes(day))
                   .map((course, index) => (
                     <div key={index} className="course">
-                      {course.name} ({course.bbbContextName})
+                      {course.name} ({course.bbbContextName}){course.repeatWeekly ? ' (Weekly)' : ''}
                       <span
                         className={`status-indicator ${isCourseLive(course.bbbContextName) ? 'green' : 'red'}`}
                       ></span>
