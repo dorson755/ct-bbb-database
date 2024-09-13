@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './SchedulePage.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-// List of days for the schedule
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const SchedulePage = () => {
@@ -14,12 +13,36 @@ const SchedulePage = () => {
     endTime: '',
     days: [],
     bbbContextName: '',
-    repeatWeekly: false, // Added field for weekly recurrence
+    repeatWeekly: false,
   });
   const [liveMeetings, setLiveMeetings] = useState([]);
   const [fullName, setFullName] = useState('');
   const [selectedRole, setSelectedRole] = useState('VIEWER');
   const [notification, setNotification] = useState(null);
+
+  // Fetch courses from the backend
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch('/api/courses');
+      const data = await response.json();
+      setCourses(data);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
+
+  // Save a new course to the backend
+  const saveCourse = async (course) => {
+    try {
+      await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(course),
+      });
+    } catch (error) {
+      console.error('Error saving course:', error);
+    }
+  };
 
   // Fetch live meetings
   const fetchLiveMeetings = async () => {
@@ -42,16 +65,15 @@ const SchedulePage = () => {
   };
 
   useEffect(() => {
+    fetchCourses();
     fetchLiveMeetings();
   }, []);
 
   // Notification logic
   const checkForUpcomingClasses = useCallback(() => {
     const now = new Date();
-    const offset = -now.getTimezoneOffset() / 60; // Offset in hours
-    const easternOffset = -4; // Eastern Time is UTC-4 or UTC-5
-
-    // Adjust for Eastern Time
+    const offset = -now.getTimezoneOffset() / 60;
+    const easternOffset = -4;
     const nowEastern = new Date(now.getTime() + (easternOffset - offset) * 60 * 60 * 1000);
 
     courses.forEach(course => {
@@ -65,7 +87,6 @@ const SchedulePage = () => {
         }
       }
 
-      // Handle repeating courses
       if (course.repeatWeekly) {
         daysOfWeek.forEach((day, index) => {
           if (nowEastern.getDay() === index) {
@@ -84,18 +105,16 @@ const SchedulePage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       checkForUpcomingClasses();
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [checkForUpcomingClasses]);
 
-  // Handle course change
   const handleCourseChange = (e) => {
     const { name, value } = e.target;
     setNewCourse({ ...newCourse, [name]: value });
   };
 
-  // Handle day change
   const handleDayChange = (day) => {
     setNewCourse((prev) => ({
       ...prev,
@@ -105,20 +124,18 @@ const SchedulePage = () => {
     }));
   };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    await saveCourse(newCourse);
     setCourses([...courses, newCourse]);
     setShowForm(false);
     setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '', repeatWeekly: false });
   };
 
-  // Check if course is live
   const isCourseLive = (bbbContextName) => {
     return liveMeetings.some((meeting) => meeting.bbbContextName === bbbContextName);
   };
 
-  // Handle joining meeting
   const handleJoinMeeting = async (bbbContextName) => {
     if (!fullName) {
       alert('Please enter your full name to join the class');
@@ -221,7 +238,6 @@ const SchedulePage = () => {
                 required
                 className="form-input"
               />
-
               <div className="day-selection">
                 {daysOfWeek.map((day) => (
                   <label key={day}>
@@ -234,15 +250,15 @@ const SchedulePage = () => {
                   </label>
                 ))}
               </div>
-
-              <input
-                type="checkbox"
-                name="repeatWeekly"
-                checked={newCourse.repeatWeekly}
-                onChange={(e) => setNewCourse({ ...newCourse, repeatWeekly: e.target.checked })}
-              />
-              <label htmlFor="repeatWeekly">Repeat Weekly</label>
-
+              <label>
+                <input
+                  type="checkbox"
+                  name="repeatWeekly"
+                  checked={newCourse.repeatWeekly}
+                  onChange={(e) => setNewCourse({ ...newCourse, repeatWeekly: e.target.checked })}
+                />
+                Repeat Weekly
+              </label>
               <button type="submit" className="submit-btn">Add Course</button>
               <button type="button" onClick={() => setShowForm(false)} className="cancel-btn">Close</button>
             </form>
@@ -266,7 +282,7 @@ const SchedulePage = () => {
                   .filter((course) => course.days.includes(day))
                   .map((course, index) => (
                     <div key={index} className="course">
-                      {course.name} ({course.bbbContextName}){course.repeatWeekly ? ' (Weekly)' : ''}
+                      {course.name} ({course.bbbContextName})
                       <span
                         className={`status-indicator ${isCourseLive(course.bbbContextName) ? 'green' : 'red'}`}
                       ></span>
