@@ -47,11 +47,17 @@ const SchedulePage = () => {
   // Notification logic
   const checkForUpcomingClasses = useCallback(() => {
     const now = new Date();
+    const offset = -now.getTimezoneOffset() / 60; // Offset in hours
+    const easternOffset = -4; // Eastern Time is UTC-4 or UTC-5
+
+    // Adjust for Eastern Time
+    const nowEastern = new Date(now.getTime() + (easternOffset - offset) * 60 * 60 * 1000);
+
     courses.forEach(course => {
       course.days.forEach(day => {
-        if (now.getDay() === daysOfWeek.indexOf(day)) {
-          const courseStart = new Date(`${now.toDateString()} ${course.startTime}`);
-          const timeDifference = courseStart - now;
+        if (nowEastern.getDay() === daysOfWeek.indexOf(day)) {
+          const courseStart = new Date(`${nowEastern.toDateString()} ${course.startTime}`);
+          const timeDifference = courseStart - nowEastern;
 
           if (timeDifference > 0 && timeDifference <= 5 * 60 * 1000) {
             setNotification(`Your class "${course.name}" is about to start in 5 minutes.`);
