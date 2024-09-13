@@ -164,7 +164,7 @@ const SchedulePage = () => {
   };
 
   return (
-    <div className="schedule-page">
+    <div className="schedule-page-container">
       <h1>Class Schedule</h1>
 
       {notification && <div className="notification">{notification}</div>}
