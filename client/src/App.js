@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css'; // Import custom styles
 import LiveClasses from './LiveClasses'; // Import Live Classes component
 import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
+import SchedulePage from './SchedulePage'; // Import Schedule Page component
 import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
 
 const App = () => {
@@ -17,7 +18,7 @@ const App = () => {
               <li><Link to="/"><img src='/assets/home.png' alt="Home" className="sidebar-logo" /></Link></li>
               <li><Link to="/live-classes"><img src='/assets/live.png' alt="Live Classes" className="sidebar-logo" /></Link></li>
               <li><Link to="/recordings"><img src='/assets/records.png' alt="Recordings" className="sidebar-logo" /></Link></li>
-              <li><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></li>
+              <li><Link to="/schedule"><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></Link></li>
               <li><a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
                 <img src='/assets/site.png' alt="Main Site" className="sidebar-logo" />
               </a></li>
@@ -44,10 +45,12 @@ const App = () => {
                         <img src='/assets/records.gif' alt="Recordings" className="card-img" />
                       </div>
                     </Link>
-                    <div className="card">
-                      <h3>Schedule</h3>
-                      <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
-                    </div>
+                    <Link to="/schedule">
+                      <div className="card">
+                        <h3>Schedule</h3>
+                        <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
+                      </div>
+                    </Link>
                     <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
                       <div className="card">
                         <h3>Site</h3>
@@ -63,6 +66,9 @@ const App = () => {
 
               {/* Recordings Page Route */}
               <Route path="/recordings" element={<RecordingsPage />} />
+
+              {/* Schedule Page Route */}
+              <Route path="/schedule" element={<SchedulePage />} />
             </Routes>
           </div>
         </div>
