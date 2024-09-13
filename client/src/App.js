@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css'; // Import custom styles
+import 'bootstrap/dist/css/bootstrap.min.css';
 import LiveClasses from './LiveClasses'; // Import Live Classes component
 import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
 import SchedulePage from './SchedulePage'; // Import Schedule Page component

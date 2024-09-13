@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './SchedulePage.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
