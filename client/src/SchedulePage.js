@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import './SchedulePage.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const SchedulePage = () => {
   const [courses, setCourses] = useState([]);
-  const [showForm, setShowForm] = useState(false); // State to control the visibility of the form
+  const [showForm, setShowForm] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: '',
     startTime: '',
     endTime: '',
     days: [],
-    bbbContextName: '', // New field for BBB context name
+    bbbContextName: '',
   });
-  const [liveMeetings, setLiveMeetings] = useState([]); // Store live meetings
-  const [fullName, setFullName] = useState(''); // Store the user's full name
-  const [selectedRole, setSelectedRole] = useState('VIEWER'); // Default role is Viewer
+  const [liveMeetings, setLiveMeetings] = useState([]);
+  const [fullName, setFullName] = useState('');
+  const [selectedRole, setSelectedRole] = useState('VIEWER');
 
-  // Fetch live meetings using the getMeetings API
   const fetchLiveMeetings = async () => {
     try {
-      const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getMeetings'); // Replace with your backend URL
+      const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getMeetings');
       const data = await response.text();
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(data, 'text/xml');
@@ -28,7 +28,7 @@ const SchedulePage = () => {
       const meetingNodes = xmlDoc.getElementsByTagName('meeting');
       const meetingsArray = Array.from(meetingNodes).map((meeting) => ({
         bbbContextName: meeting.getElementsByTagName('bbb-context-name')[0]?.textContent,
-        meetingID: meeting.getElementsByTagName('meetingID')[0]?.textContent, // Add meetingID for joining the session
+        meetingID: meeting.getElementsByTagName('meetingID')[0]?.textContent,
       }));
 
       setLiveMeetings(meetingsArray);
@@ -38,16 +38,14 @@ const SchedulePage = () => {
   };
 
   useEffect(() => {
-    fetchLiveMeetings(); // Fetch live meetings when the component mounts
+    fetchLiveMeetings();
   }, []);
 
-  // Handle input changes in the form
   const handleCourseChange = (e) => {
     const { name, value } = e.target;
     setNewCourse({ ...newCourse, [name]: value });
   };
 
-  // Handle changes in the day selection
   const handleDayChange = (day) => {
     setNewCourse((prev) => ({
       ...prev,
@@ -57,20 +55,17 @@ const SchedulePage = () => {
     }));
   };
 
-  // Handle form submission to add a new course
   const handleSubmit = (e) => {
     e.preventDefault();
-    setCourses([...courses, newCourse]); // Add the new course to the list
-    setShowForm(false); // Close the form
-    setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '' }); // Reset form
+    setCourses([...courses, newCourse]);
+    setShowForm(false);
+    setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '' });
   };
 
-  // Check if a course is live by comparing the bbbContextName with live meetings
   const isCourseLive = (bbbContextName) => {
     return liveMeetings.some((meeting) => meeting.bbbContextName === bbbContextName);
   };
 
-  // Handle joining the meeting
   const handleJoinMeeting = async (bbbContextName) => {
     if (!fullName) {
       alert('Please enter your full name to join the class');
@@ -91,7 +86,7 @@ const SchedulePage = () => {
       const data = await response.json();
 
       if (data.url) {
-        window.open(data.url, '_blank'); // Open the generated BBB join URL in a new tab
+        window.open(data.url, '_blank');
       } else {
         alert('Error joining the meeting.');
       }
@@ -105,7 +100,6 @@ const SchedulePage = () => {
     <div className="schedule-page">
       <h1>Class Schedule</h1>
 
-      {/* Input field for user's full name */}
       <div className="name-input-container">
         <label htmlFor="fullName">Enter your full name:</label>
         <input
@@ -117,7 +111,6 @@ const SchedulePage = () => {
         />
       </div>
 
-      {/* Dropdown to select role */}
       <div className="role-selection">
         <label htmlFor="role">Select your role:</label>
         <select
@@ -130,7 +123,7 @@ const SchedulePage = () => {
         </select>
       </div>
 
-      <button onClick={() => setShowForm(true)}>Add Course</button>
+      <button onClick={() => setShowForm(true)} className="add-course-btn">Add Course</button>
 
       {showForm && (
         <div className="lightbox">
@@ -144,6 +137,7 @@ const SchedulePage = () => {
                 value={newCourse.name}
                 onChange={handleCourseChange}
                 required
+                className="form-input"
               />
               <input
                 type="text"
@@ -152,6 +146,7 @@ const SchedulePage = () => {
                 value={newCourse.bbbContextName}
                 onChange={handleCourseChange}
                 required
+                className="form-input"
               />
               <input
                 type="time"
@@ -160,6 +155,7 @@ const SchedulePage = () => {
                 value={newCourse.startTime}
                 onChange={handleCourseChange}
                 required
+                className="form-input"
               />
               <input
                 type="time"
@@ -168,9 +164,10 @@ const SchedulePage = () => {
                 value={newCourse.endTime}
                 onChange={handleCourseChange}
                 required
+                className="form-input"
               />
 
-              <div>
+              <div className="day-selection">
                 {daysOfWeek.map((day) => (
                   <label key={day}>
                     <input
@@ -183,14 +180,13 @@ const SchedulePage = () => {
                 ))}
               </div>
 
-              <button type="submit">Add Course</button>
+              <button type="submit" className="submit-btn">Add Course</button>
+              <button type="button" onClick={() => setShowForm(false)} className="cancel-btn">Close</button>
             </form>
-            <button onClick={() => setShowForm(false)}>Close</button>
           </div>
         </div>
       )}
 
-      {/* Table to display the schedule */}
       <table className="schedule-table">
         <thead>
           <tr>
