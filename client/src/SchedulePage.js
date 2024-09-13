@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './SchedulePage.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+// List of days for the schedule
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const SchedulePage = () => {
@@ -17,7 +18,9 @@ const SchedulePage = () => {
   const [liveMeetings, setLiveMeetings] = useState([]);
   const [fullName, setFullName] = useState('');
   const [selectedRole, setSelectedRole] = useState('VIEWER');
+  const [notification, setNotification] = useState(null);
 
+  // Fetch live meetings
   const fetchLiveMeetings = async () => {
     try {
       const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getMeetings');
@@ -41,11 +44,38 @@ const SchedulePage = () => {
     fetchLiveMeetings();
   }, []);
 
+  // Notification logic
+  const checkForUpcomingClasses = useCallback(() => {
+    const now = new Date();
+    courses.forEach(course => {
+      course.days.forEach(day => {
+        if (now.getDay() === daysOfWeek.indexOf(day)) {
+          const courseStart = new Date(`${now.toDateString()} ${course.startTime}`);
+          const timeDifference = courseStart - now;
+
+          if (timeDifference > 0 && timeDifference <= 5 * 60 * 1000) {
+            setNotification(`Your class "${course.name}" is about to start in 5 minutes.`);
+          }
+        }
+      });
+    });
+  }, [courses]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkForUpcomingClasses();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [checkForUpcomingClasses]);
+
+  // Handle course change
   const handleCourseChange = (e) => {
     const { name, value } = e.target;
     setNewCourse({ ...newCourse, [name]: value });
   };
 
+  // Handle day change
   const handleDayChange = (day) => {
     setNewCourse((prev) => ({
       ...prev,
@@ -55,6 +85,7 @@ const SchedulePage = () => {
     }));
   };
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     setCourses([...courses, newCourse]);
@@ -62,10 +93,12 @@ const SchedulePage = () => {
     setNewCourse({ name: '', startTime: '', endTime: '', days: [], bbbContextName: '' });
   };
 
+  // Check if course is live
   const isCourseLive = (bbbContextName) => {
     return liveMeetings.some((meeting) => meeting.bbbContextName === bbbContextName);
   };
 
+  // Handle joining meeting
   const handleJoinMeeting = async (bbbContextName) => {
     if (!fullName) {
       alert('Please enter your full name to join the class');
@@ -99,6 +132,8 @@ const SchedulePage = () => {
   return (
     <div className="schedule-page">
       <h1>Class Schedule</h1>
+
+      {notification && <div className="notification">{notification}</div>}
 
       <div className="name-input-container">
         <label htmlFor="fullName">Enter your full name:</label>
