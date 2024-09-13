@@ -47,7 +47,7 @@ const SchedulePage = () => {
   // Fetch live meetings
   const fetchLiveMeetings = async () => {
     try {
-      const response = await fetch('https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/getMeetings');
+      const response = await fetch('/api/getMeetings');
       const data = await response.text();
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(data, 'text/xml');
@@ -150,9 +150,7 @@ const SchedulePage = () => {
     }
 
     try {
-      const response = await fetch(
-        `https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meeting.meetingID)}&role=${selectedRole}`
-      );
+      const response = await fetch(`/api/joinMeeting?fullName=${encodeURIComponent(fullName)}&meetingID=${encodeURIComponent(meeting.meetingID)}&role=${selectedRole}`);
       const data = await response.json();
 
       if (data.url) {
