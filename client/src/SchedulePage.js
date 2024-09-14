@@ -33,7 +33,7 @@ const SchedulePage = () => {
   // Save a new course to the backend
   const saveCourse = async (course) => {
     try {
-      await fetch('/api/courses', {
+      await fetch('/api/saveCourse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(course),

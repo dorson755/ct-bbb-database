@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import mongoose from 'mongoose'; // Import Mongoose
 import path from 'path'; // Added to serve static files
 import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
+import Course from './models/Course.js'; // Import Course model
 
 
 const app = express();

@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import Course from './models/Course.js'; // Import the Course model
 
 const courseSchema = new mongoose.Schema({
   name: { type: String, required: true },
