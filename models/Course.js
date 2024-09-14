@@ -1,14 +1,11 @@
 import mongoose from 'mongoose';
 
 const courseSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  startHour: { type: String, required: true }, // You can use a different type if needed
-  endHour: { type: String, required: true },
-  days: { type: [String], required: true }, // Array of days, e.g., ["Monday", "Wednesday"]
-  bbbContextName: { type: String, required: true },
-  // Additional fields if necessary
-}, {
-  timestamps: true // Optional: adds createdAt and updatedAt timestamps
+  name: String,
+  startHour: String,
+  endHour: String,
+  days: [String],
+  bbbContextName: String,
 });
 
 const Course = mongoose.model('Course', courseSchema);
