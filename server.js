@@ -4,6 +4,7 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'path';  // Added to serve static files
 import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
+import mongoose from 'mongoose';  // Added mongoose for MongoDB connection
 
 const app = express();
 const PORT = process.env.PORT || 5000;  // Use process.env.PORT for Heroku
@@ -13,6 +14,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors()); // Enable CORS for all routes
+
+// MongoDB connection
+const mongoURI = process.env.MONGO_URI || 'mongodb+srv://dwi3209:Ngc4414flux!@ct-dashboard-schedule.2a9ts.mongodb.net/?retryWrites=true&w=majority&appName=ct-dashboard-schedule';  // Add your MongoDB URI here
+
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // BBB API configuration
 const BBB_URL = process.env.BBB_URL || 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Use environment variables for security
@@ -48,85 +59,6 @@ app.get('/api/getRecordings', async (req, res) => {
   } catch (error) {
     console.error('Error fetching recordings from BBB API:', error);
     res.status(500).send('Error fetching recordings from BBB API');
-  }
-});
-
-// API route to get meetings
-app.get('/api/getMeetings', async (req, res) => {
-  const apiCall = 'getMeetings';
-  const params = {};
-  const checksum = generateChecksum(apiCall, params);
-
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?checksum=${checksum}`;
-  console.log('Constructed BBB API URL for getMeetings:', bbbApiUrl);
-
-  try {
-    const response = await fetch(bbbApiUrl);
-    const data = await response.text();
-    res.send(data);
-  } catch (error) {
-    console.error('Error fetching meetings from BBB API:', error);
-    res.status(500).send('Error fetching meetings from BBB API');
-  }
-});
-
-// API route to join a meeting
-app.get('/api/joinMeeting', async (req, res) => {
-  const { fullName, meetingID, role } = req.query;
-
-  if (!fullName || !meetingID || !role) {
-    return res.status(400).send('Missing required parameters: fullName, meetingID, or role');
-  }
-
-  const apiCall = 'join';
-  const params = {
-    fullName,
-    meetingID,
-    role,
-    excludeFromDashboard: 'true',
-    redirect: 'true'
-  };
-
-  const checksum = generateChecksum(apiCall, params);
-  const queryString = new URLSearchParams(params).toString();
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
-
-  console.log('Constructed BBB Join API URL:', bbbApiUrl);
-
-  try {
-    res.send({ url: bbbApiUrl });
-  } catch (error) {
-    console.error('Error generating join URL for BBB:', error);
-    res.status(500).send('Error generating join URL');
-  }
-});
-
-// API route to delete recordings
-app.get('/api/deleteRecordings', async (req, res) => {
-  const { recordID } = req.query;
-
-  if (!recordID) {
-    return res.status(400).send('Missing recordID parameter');
-  }
-
-  const apiCall = 'deleteRecordings';
-  const params = { recordID };
-  const checksum = generateChecksum(apiCall, params);
-  const queryString = new URLSearchParams(params).toString();
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
-
-  console.log('Constructed BBB Delete API URL:', bbbApiUrl);
-
-  try {
-    const response = await fetch(bbbApiUrl);
-    if (response.ok) {
-      res.send('Recordings deleted successfully');
-    } else {
-      res.status(response.status).send('Error deleting recordings');
-    }
-  } catch (error) {
-    console.error('Error deleting recordings from BBB API:', error);
-    res.status(500).send('Error deleting recordings from BBB API');
   }
 });
 
