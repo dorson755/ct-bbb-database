@@ -6,6 +6,7 @@ import mongoose from 'mongoose'; // Import Mongoose
 import path from 'path'; // Added to serve static files
 import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
 
+
 const app = express();
 const PORT = process.env.PORT || 5000; // Use process.env.PORT for Heroku
 
@@ -138,6 +139,38 @@ app.get('/api/deleteRecordings', async (req, res) => {
   } catch (error) {
     console.error('Error deleting recordings from BBB API:', error);
     res.status(500).send('Error deleting recordings from BBB API');
+  }
+});
+
+// API route to save a course
+app.post('/api/saveCourse', async (req, res) => {
+  try {
+    const { name, startHour, endHour, days, bbbContextName } = req.body;
+
+    // Validate input
+    if (!name || !startHour || !endHour || !days || !bbbContextName) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Create a new course
+    const newCourse = new Course({ name, startHour, endHour, days, bbbContextName });
+    await newCourse.save();
+
+    res.status(201).json(newCourse);
+  } catch (error) {
+    console.error('Error saving course:', error);
+    res.status(500).json({ error: 'Error saving course' });
+  }
+});
+
+// API route to get all courses
+app.get('/api/getCourses', async (req, res) => {
+  try {
+    const courses = await Course.find();
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).json({ error: 'Error fetching courses' });
   }
 });
 
