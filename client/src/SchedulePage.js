@@ -33,15 +33,23 @@ const SchedulePage = () => {
   // Save a new course to the backend
   const saveCourse = async (course) => {
     try {
-      await fetch('/api/saveCourse', {
+      const response = await fetch('/api/saveCourse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(course),
       });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const result = await response.json();
+      console.log('Course saved:', result);
+      // Optionally refresh the list of courses
+      fetchCourses();
     } catch (error) {
       console.error('Error saving course:', error);
     }
   };
+  
 
   // Fetch live meetings
   const fetchLiveMeetings = async () => {
