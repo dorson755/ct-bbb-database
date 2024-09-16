@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import StudentSearchComponent from './StudentSearchComponent';
 import StudentDetailsComponent from './StudentDetailsComponent';
+import './StudentManager.css';
 
 const StudentManager = () => {
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -11,7 +12,8 @@ const StudentManager = () => {
   };
 
   return (
-    <div>
+    <div className='student-manager-page'>
+      <h1>Student Search</h1>
       <StudentSearchComponent onAddStudents={handleAddStudents} />
 
       {selectedStudents.length > 0 && (
