@@ -11,13 +11,6 @@ const StudentSearchComponent = () => {
   // Fetch students based on email or fullName
   const fetchStudents = async () => {
     try {
-      if (!email && !fullName) {
-        setWarning('Please enter a student name or email');
-        return;
-      }
-      
-      setWarning(null); // Clear warning if query is valid
-
       let query = '';
       if (email) {
         query = `email=${encodeURIComponent(email)}`;
@@ -26,28 +19,33 @@ const StudentSearchComponent = () => {
         if (query) query += '&';
         query += `fullName=${encodeURIComponent(fullName)}`;
       }
-
+  
+      if (!query) {
+        setWarning('Please enter a student name or email');
+        return;
+      }
+  
       const response = await fetch(`/api/searchStudents?${query}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      setStudents(data);
-      // If fullName search is provided, apply additional filtering
-      if (fullName) {
-        const result = data.filter(student =>
-          student.fullname.toLowerCase().includes(fullName.toLowerCase())
-        );
-        setFilteredStudents(result);
-      } else {
+  
+      if (data.length > 0) {
+        setStudents(data);
         setFilteredStudents(data);
+      } else {
+        setFilteredStudents([]);
+        setWarning('No users found');
       }
+  
       setError(null);
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Failed to fetch student data. Please try again.');
     }
   };
+  
 
   return (
     <div>

@@ -181,22 +181,29 @@ app.get('/api/getCourses', async (req, res) => {
 app.get('/api/searchStudents', async (req, res) => {
   const { email, fullName } = req.query;
 
+  // Validate input
   if (!email && !fullName) {
-    return res.status(400).json({ error: 'At least one search parameter is required' });
+    return res.status(400).json({ error: 'At least one search parameter (email or fullName) is required' });
   }
 
-  const token = '11d9797670d74f22f8e4aa8483fab962'; // Replace with your actual token
-
-  let url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=core_user_get_users&moodlewsrestformat=json`;
-  
+  // Construct the Moodle API URL
+  const criteria = [];
   if (email) {
-    url += `&criteria[0][key]=email&criteria[0][value]=${encodeURIComponent(email)}`;
-  } else if (fullName) {
-    url += `&criteria[0][key]=fullname&criteria[0][value]=${encodeURIComponent(fullName)}`;
+    criteria.push(`criteria[0][key]=email&criteria[0][value]=${encodeURIComponent(email)}`);
   }
+  if (fullName) {
+    criteria.push(`criteria[1][key]=fullname&criteria[1][value]=${encodeURIComponent(fullName)}`);
+  }
+
+  const url = `${MOODLE_URL}/webservice/rest/server.php?wstoken=${MOODLE_TOKEN}&wsfunction=core_user_get_users&moodlewsrestformat=json&${criteria.join('&')}`;
 
   try {
     const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Moodle API returned ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.users && data.users.length > 0) {
@@ -205,8 +212,8 @@ app.get('/api/searchStudents', async (req, res) => {
       res.status(404).json({ message: 'No users found' });
     }
   } catch (error) {
-    console.error('Error fetching student data:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error fetching student data:', error.message);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
