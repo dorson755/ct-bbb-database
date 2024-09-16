@@ -6,6 +6,7 @@ const StudentSearchComponent = () => {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [error, setError] = useState(null);
+  const [warning, setWarning] = useState(null); // Added warning state
 
   // Fetch students based on email or fullName
   const fetchStudents = async () => {
@@ -17,6 +18,12 @@ const StudentSearchComponent = () => {
         query = `fullName=${encodeURIComponent(fullName)}`;
       }
 
+      if (!query) {
+        setWarning('Please enter a student name or email');
+        return;
+      }
+
+      setWarning(null); // Clear warning if query is valid
       const response = await fetch(`/api/searchStudents?${query}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -52,7 +59,8 @@ const StudentSearchComponent = () => {
       />
       <button onClick={handleSearchClick}>Search</button>
 
-      {error && <p>{error}</p>}
+      {warning && <p style={{ color: 'orange' }}>{warning}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <ul>
         {filteredStudents.map((student) => (
