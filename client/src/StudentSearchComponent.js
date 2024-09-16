@@ -68,7 +68,6 @@ const StudentSearchComponent = () => {
           students.map((student) => (
             <li key={student.id}>
               {student.fullname} ({student.email})
-              <img src={student.profileimageurl} alt={student.fullname} />
             </li>
           ))
         ) : (
