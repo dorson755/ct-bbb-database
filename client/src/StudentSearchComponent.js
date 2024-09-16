@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const StudentSearchComponent = () => {
   const [email, setEmail] = useState('');
@@ -31,18 +31,10 @@ const StudentSearchComponent = () => {
     }
   };
 
-  // Fetch students when email or fullName changes
-  useEffect(() => {
+  // Handle search button click
+  const handleSearchClick = () => {
     fetchStudents();
-  }, [email, fullName]);
-
-  // Filter students based on full name search
-  useEffect(() => {
-    const result = students.filter(student =>
-      student.fullname.toLowerCase().includes(fullName.toLowerCase())
-    );
-    setFilteredStudents(result);
-  }, [fullName, students]);
+  };
 
   return (
     <div>
@@ -58,7 +50,7 @@ const StudentSearchComponent = () => {
         onChange={(e) => setFullName(e.target.value)}
         placeholder="Search by full name"
       />
-      <button onClick={fetchStudents}>Search</button>
+      <button onClick={handleSearchClick}>Search</button>
 
       {error && <p>{error}</p>}
 
