@@ -18,12 +18,13 @@ const StudentSearchComponent = () => {
         return;
       }
 
-      setWarning(null); // Clear warning if query is valid
-      setLoading(true);  // Show loading animation when fetching starts
+      setWarning(null);
+      setLoading(true);
 
+      // Build query string based on search inputs
       let query = '';
       if (email) {
-        query = `email=${encodeURIComponent(email)}`;
+        query += `email=${encodeURIComponent(email)}`;
       }
       if (fullName) {
         if (query) query += '&'; // Only add '&' if email is already part of the query
@@ -34,23 +35,26 @@ const StudentSearchComponent = () => {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
+
       const data = await response.json();
       setStudents(data);
 
-      // Perform additional filtering on the frontend for partial matching
-      const result = data.filter(student => {
-        const fullEmailMatch = student.email.toLowerCase().includes(email.toLowerCase());
-        const fullNameMatch = student.fullname.toLowerCase().includes(fullName.toLowerCase());
-        return fullEmailMatch || fullNameMatch;  // Return true if either matches
-      });
+      // If fullName search is provided, apply additional filtering
+      if (fullName) {
+        const result = data.filter(student =>
+          student.fullname.toLowerCase().includes(fullName.toLowerCase())
+        );
+        setFilteredStudents(result);
+      } else {
+        setFilteredStudents(data);
+      }
 
-      setFilteredStudents(result);
       setError(null);
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Failed to fetch student data. Please try again.');
     } finally {
-      setLoading(false);  // Hide loading animation when fetching is done
+      setLoading(false);
     }
   };
 
