@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './StudentSearchComponent.css'; // Make sure the CSS file is correctly referenced
+import './StudentSearchComponent.css'; // Assuming you will put the CSS in this file
 
 const StudentSearchComponent = () => {
   const [email, setEmail] = useState('');
@@ -21,12 +21,13 @@ const StudentSearchComponent = () => {
       setWarning(null);
       setLoading(true);
 
+      // Build query string based on search inputs
       let query = '';
       if (email) {
-        query = `email=${encodeURIComponent(email)}`;
+        query += `email=${encodeURIComponent(email)}`;
       }
       if (fullName) {
-        if (query) query += '&';
+        if (query) query += '&'; // Only add '&' if email is already part of the query
         query += `fullName=${encodeURIComponent(fullName)}`;
       }
 
@@ -34,9 +35,11 @@ const StudentSearchComponent = () => {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
+
       const data = await response.json();
       setStudents(data);
 
+      // If fullName search is provided, apply additional filtering
       if (fullName) {
         const result = data.filter(student =>
           student.fullname.toLowerCase().includes(fullName.toLowerCase())
