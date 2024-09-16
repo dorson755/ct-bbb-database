@@ -9,43 +9,43 @@ const StudentSearchComponent = () => {
   const [warning, setWarning] = useState(null);
 
   // Fetch students based on email or fullName
-  const fetchStudents = async () => {
-    try {
-      let query = '';
-      if (email) {
-        query = `email=${encodeURIComponent(email)}`;
-      } 
-      if (fullName) {
-        if (query) query += '&';
-        query += `fullName=${encodeURIComponent(fullName)}`;
-      }
-  
-      if (!query) {
-        setWarning('Please enter a student name or email');
-        return;
-      }
-  
-      const response = await fetch(`/api/searchStudents?${query}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-  
-      if (data.length > 0) {
-        setStudents(data);
-        setFilteredStudents(data);
-      } else {
-        setFilteredStudents([]);
-        setWarning('No users found');
-      }
-  
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      setError('Failed to fetch student data. Please try again.');
+const fetchStudents = async () => {
+  try {
+    let query = '';
+    if (email) {
+      query = `email=${encodeURIComponent(email)}`;
+    } 
+    if (fullName) {
+      if (query) query += '&';
+      query += `fullName=${encodeURIComponent(fullName)}`;
     }
-  };
-  
+
+    if (!query) {
+      setWarning('Please enter a student name or email');
+      return;
+    }
+
+    const response = await fetch(`/api/searchStudents?${query}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+
+    if (data.length > 0) {
+      setStudents(data);
+      setFilteredStudents(data);
+    } else {
+      setFilteredStudents([]);
+      setWarning('No users found');
+    }
+
+    setError(null);
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    setError('Failed to fetch student data. Please try again.');
+  }
+};
+
 
   return (
     <div>
