@@ -1,57 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const StudentSearchComponent = ({ onAddStudents }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const StudentSearchComponent = () => {
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [students, setStudents] = useState([]);
-  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [error, setError] = useState(null);
 
-  // Search students from backend
-  const searchStudents = async () => {
-    const response = await fetch(`/api/searchStudents?name=${searchQuery}`);
-    const data = await response.json();
-    setStudents(data);
-  };
+  // Fetch students based on email or fullName
+  const fetchStudents = async () => {
+    try {
+      let query = '';
+      if (email) {
+        query = `email=${encodeURIComponent(email)}`;
+      } else if (fullName) {
+        query = `fullName=${encodeURIComponent(fullName)}`;
+      }
 
-  // Handle selecting a student
-  const toggleStudentSelection = (student) => {
-    if (selectedStudents.find((s) => s.id === student.id)) {
-      setSelectedStudents(selectedStudents.filter((s) => s.id !== student.id));
-    } else {
-      setSelectedStudents([...selectedStudents, student]);
+      const response = await fetch(`/api/searchStudents?${query}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setStudents(data);
+      setFilteredStudents(data); // Initialize filtered list
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setError('Failed to fetch student data. Please try again.');
     }
   };
 
-  // Submit selected students
-  const handleAddStudents = () => {
-    onAddStudents(selectedStudents);
-  };
+  // Fetch students when email or fullName changes
+  useEffect(() => {
+    fetchStudents();
+  }, [email, fullName]);
+
+  // Filter students based on full name search
+  useEffect(() => {
+    const result = students.filter(student =>
+      student.fullname.toLowerCase().includes(fullName.toLowerCase())
+    );
+    setFilteredStudents(result);
+  }, [fullName, students]);
 
   return (
     <div>
       <input
         type="text"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Search by name"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Search by email"
       />
-      <button onClick={searchStudents}>Search</button>
-      
+      <input
+        type="text"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+        placeholder="Search by full name"
+      />
+      <button onClick={fetchStudents}>Search</button>
+
+      {error && <p>{error}</p>}
+
       <ul>
-        {students.map((student) => (
+        {filteredStudents.map((student) => (
           <li key={student.id}>
-            <input
-              type="checkbox"
-              checked={selectedStudents.some((s) => s.id === student.id)}
-              onChange={() => toggleStudentSelection(student)}
-            />
-            {student.fullname}
+            {student.fullname} ({student.email})
+            <img src={student.profileimageurl} alt={student.fullname} />
           </li>
         ))}
       </ul>
-      
-      {selectedStudents.length > 0 && (
-        <button onClick={handleAddStudents}>Add Selected Students</button>
-      )}
     </div>
   );
 };

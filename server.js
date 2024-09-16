@@ -177,40 +177,39 @@ app.get('/api/getCourses', async (req, res) => {
   }
 });
 
-//Backend route to search students
+// API route to search students
 app.get('/api/searchStudents', async (req, res) => {
-  const { name } = req.query;
+  const { email, fullName } = req.query;
 
-  if (!name) {
-    return res.status(400).send('Name query parameter is required');
+  if (!email && !fullName) {
+    return res.status(400).json({ error: 'At least one search parameter is required' });
   }
 
-  const moodleApiUrl = `${MOODLE_URL}/webservice/rest/server.php`;
-  const params = {
-    wstoken: MOODLE_TOKEN,  // Your Moodle token
-    wsfunction: 'core_user_get_users',
-    moodlewsrestformat: 'json',
-    criteria: JSON.stringify([{ key: 'fullname', value: name }])  // Search by full name
-  };
+  const token = '11d9797670d74f22f8e4aa8483fab962'; // Replace with your actual token
 
-  const queryString = new URLSearchParams(params).toString();
-  const url = `${moodleApiUrl}?${queryString}`;
+  let url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=core_user_get_users&moodlewsrestformat=json`;
+  
+  if (email) {
+    url += `&criteria[0][key]=email&criteria[0][value]=${encodeURIComponent(email)}`;
+  } else if (fullName) {
+    url += `&criteria[0][key]=fullname&criteria[0][value]=${encodeURIComponent(fullName)}`;
+  }
 
   try {
     const response = await fetch(url);
     const data = await response.json();
 
-    // Handle cases where no students are found
-    if (!data.users || data.users.length === 0) {
-      return res.status(404).json({ message: 'No students found' });
+    if (data.users && data.users.length > 0) {
+      res.status(200).json(data.users);
+    } else {
+      res.status(404).json({ message: 'No users found' });
     }
-
-    res.status(200).json(data.users);
   } catch (error) {
-    console.error('Error fetching students from Moodle:', error);
-    res.status(500).send('Error fetching students from Moodle');
+    console.error('Error fetching student data:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 // Serve static files from the React app
