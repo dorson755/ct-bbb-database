@@ -9,43 +9,45 @@ const StudentSearchComponent = () => {
   const [warning, setWarning] = useState(null);
 
   // Fetch students based on email or fullName
-const fetchStudents = async () => {
-  try {
-    let query = '';
-    if (email) {
-      query = `email=${encodeURIComponent(email)}`;
-    } 
-    if (fullName) {
-      if (query) query += '&';
-      query += `fullName=${encodeURIComponent(fullName)}`;
-    }
+  const fetchStudents = async () => {
+    try {
+      if (!email && !fullName) {
+        setWarning('Please enter a student name or email');
+        return;
+      }
+      
+      setWarning(null); // Clear warning if query is valid
 
-    if (!query) {
-      setWarning('Please enter a student name or email');
-      return;
-    }
+      let query = '';
+      if (email) {
+        query = `email=${encodeURIComponent(email)}`;
+      } 
+      if (fullName) {
+        if (query) query += '&';
+        query += `fullName=${encodeURIComponent(fullName)}`;
+      }
 
-    const response = await fetch(`/api/searchStudents?${query}`);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const data = await response.json();
-
-    if (data.length > 0) {
+      const response = await fetch(`/api/searchStudents?${query}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
       setStudents(data);
-      setFilteredStudents(data);
-    } else {
-      setFilteredStudents([]);
-      setWarning('No users found');
+      // If fullName search is provided, apply additional filtering
+      if (fullName) {
+        const result = data.filter(student =>
+          student.fullname.toLowerCase().includes(fullName.toLowerCase())
+        );
+        setFilteredStudents(result);
+      } else {
+        setFilteredStudents(data);
+      }
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setError('Failed to fetch student data. Please try again.');
     }
-
-    setError(null);
-  } catch (error) {
-    console.error('Error fetching students:', error);
-    setError('Failed to fetch student data. Please try again.');
-  }
-};
-
+  };
 
   return (
     <div>
