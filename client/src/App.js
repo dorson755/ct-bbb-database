@@ -20,6 +20,7 @@ const App = () => {
               <li><Link to="/live-classes"><img src='/assets/live.png' alt="Live Classes" className="sidebar-logo" /></Link></li>
               <li><Link to="/recordings"><img src='/assets/records.png' alt="Recordings" className="sidebar-logo" /></Link></li>
               <li><Link to="/schedule"><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></Link></li>
+              <li><Link to="/student-manager"><img src='/assets/search.png' alt="Student Manager" className="sidebar-logo" /></Link></li>
               <li><a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
                 <img src='/assets/site.png' alt="Main Site" className="sidebar-logo" />
               </a></li>
@@ -52,6 +53,12 @@ const App = () => {
                         <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
                       </div>
                     </Link>
+                    <Link to="/student-manager">
+                      <div className="card">
+                        <h3>Student Manager</h3>
+                        <img src='/assets/search.gif' alt="Student Manager" className="card-img" />
+                      </div>
+                    </Link>
                     <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
                       <div className="card">
                         <h3>Site</h3>
@@ -70,6 +77,9 @@ const App = () => {
 
               {/* Schedule Page Route */}
               <Route path="/schedule" element={<SchedulePage />} />
+
+              {/* Student Manager Page Route */}
+              <Route path="/student-manager" element={<StudentManager />} />
             </Routes>
           </div>
         </div>

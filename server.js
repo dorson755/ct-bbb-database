@@ -22,6 +22,8 @@ app.use(express.json()); // To parse JSON bodies
 // BBB API configuration
 const BBB_URL = process.env.BBB_URL || 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Use environment variables for security
 const BBB_SECRET = process.env.BBB_SECRET || '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4'; // Use environment variables for security
+const MOODLE_TOKEN = process.env.MOODLE_TOKEN || '11d9797670d74f22f8e4aa8483fab962';
+const MOODLE_URL = process.env.MOODLE_URL || 'https://www.cybertech242-online.com';
 
 // MongoDB connection URI
 const mongoURI = process.env.MONGO_URI || 'mongodb+srv://dwi3209:Ngc4414flux!@ct-dashboard-schedule.2a9ts.mongodb.net/?retryWrites=true&w=majority&appName=ct-dashboard-schedule';
@@ -174,6 +176,42 @@ app.get('/api/getCourses', async (req, res) => {
     res.status(500).json({ error: 'Error fetching courses' });
   }
 });
+
+//Backend route to search students
+app.get('/api/searchStudents', async (req, res) => {
+  const { name } = req.query;
+
+  if (!name) {
+    return res.status(400).send('Name query parameter is required');
+  }
+
+  const moodleApiUrl = `${MOODLE_URL}/webservice/rest/server.php`;
+  const params = {
+    wstoken: MOODLE_TOKEN,  // Your Moodle token
+    wsfunction: 'core_user_get_users',
+    moodlewsrestformat: 'json',
+    criteria: JSON.stringify([{ key: 'fullname', value: name }])  // Search by full name
+  };
+
+  const queryString = new URLSearchParams(params).toString();
+  const url = `${moodleApiUrl}?${queryString}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // Handle cases where no students are found
+    if (!data.users || data.users.length === 0) {
+      return res.status(404).json({ message: 'No students found' });
+    }
+
+    res.status(200).json(data.users);
+  } catch (error) {
+    console.error('Error fetching students from Moodle:', error);
+    res.status(500).send('Error fetching students from Moodle');
+  }
+});
+
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
