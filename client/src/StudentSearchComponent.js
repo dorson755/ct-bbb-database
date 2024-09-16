@@ -4,6 +4,7 @@ const StudentSearchComponent = () => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
 
@@ -19,8 +20,8 @@ const StudentSearchComponent = () => {
 
       let query = '';
       if (email) {
-        query += `email=${encodeURIComponent(email)}`;
-      }
+        query = `email=${encodeURIComponent(email)}`;
+      } 
       if (fullName) {
         if (query) query += '&';
         query += `fullName=${encodeURIComponent(fullName)}`;
@@ -32,16 +33,20 @@ const StudentSearchComponent = () => {
       }
       const data = await response.json();
       setStudents(data);
+      // If fullName search is provided, apply additional filtering
+      if (fullName) {
+        const result = data.filter(student =>
+          student.fullname.toLowerCase().includes(fullName.toLowerCase())
+        );
+        setFilteredStudents(result);
+      } else {
+        setFilteredStudents(data);
+      }
       setError(null);
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Failed to fetch student data. Please try again.');
     }
-  };
-
-  // Handle search button click
-  const handleSearchClick = () => {
-    fetchStudents();
   };
 
   return (
@@ -58,16 +63,17 @@ const StudentSearchComponent = () => {
         onChange={(e) => setFullName(e.target.value)}
         placeholder="Search by full name"
       />
-      <button onClick={handleSearchClick}>Search</button>
+      <button onClick={fetchStudents}>Search</button>
 
       {warning && <p style={{ color: 'orange' }}>{warning}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <ul>
-        {students.length > 0 ? (
-          students.map((student) => (
+        {filteredStudents.length > 0 ? (
+          filteredStudents.map((student) => (
             <li key={student.id}>
               {student.fullname} ({student.email})
+              <img src={student.profileimageurl} alt={student.fullname} />
             </li>
           ))
         ) : (
