@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import LiveClasses from './LiveClasses'; // Import Live Classes component
 import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
 import SchedulePage from './SchedulePage'; // Import Schedule Page component
+import StudentManager from './StudentManager';
 import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
 
 const App = () => {
