@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './StudentSearchComponent.css'; // Assuming you will put the CSS in this file
 
-const StudentSearchComponent = () => {
+const StudentSearchComponent = ({ onStudentSelect }) => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [students, setStudents] = useState([]);
@@ -10,7 +10,6 @@ const StudentSearchComponent = () => {
   const [warning, setWarning] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch students based on email or fullName
   const fetchStudents = async () => {
     try {
       if (!email && !fullName) {
@@ -21,13 +20,12 @@ const StudentSearchComponent = () => {
       setWarning(null);
       setLoading(true);
 
-      // Build query string based on search inputs
       let query = '';
       if (email) {
         query += `email=${encodeURIComponent(email)}`;
       }
       if (fullName) {
-        if (query) query += '&'; // Only add '&' if email is already part of the query
+        if (query) query += '&';
         query += `fullName=${encodeURIComponent(fullName)}`;
       }
 
@@ -39,7 +37,6 @@ const StudentSearchComponent = () => {
       const data = await response.json();
       setStudents(data);
 
-      // If fullName search is provided, apply additional filtering
       if (fullName) {
         const result = data.filter(student =>
           student.fullname.toLowerCase().includes(fullName.toLowerCase())
@@ -80,12 +77,16 @@ const StudentSearchComponent = () => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {loading ? (
-        <div className="loader"></div> // Display spinner animation
+        <div className="loader"></div>
       ) : (
         <ul className="student-list">
           {filteredStudents.length > 0 ? (
             filteredStudents.map((student) => (
-              <li key={student.id}>
+              <li 
+                key={student.id} 
+                onClick={() => onStudentSelect(student)} // Pass selected student to parent
+                className="student-item"
+              >
                 {student.fullname} ({student.email})
               </li>
             ))

@@ -1,68 +1,59 @@
 import React, { useEffect, useState } from 'react';
 
-const StudentDetailsComponent = ({ selectedStudents }) => {
-  const [studentsWithCourses, setStudentsWithCourses] = useState([]);
-  const [activeStudent, setActiveStudent] = useState(null); // State for the selected student
+const StudentDetailsComponent = ({ selectedStudent }) => {
+  const [studentWithCourses, setStudentWithCourses] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Fetch courses for each selected student
   useEffect(() => {
-    const fetchCourses = async (student) => {
-      const response = await fetch(`/api/getStudentCourses?userId=${student.id}`);
-      const data = await response.json();
-      return { ...student, courses: data };
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/getStudentCourses?userId=${selectedStudent.id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch courses');
+        }
+
+        setStudentWithCourses({ ...selectedStudent, courses: data });
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        setError('Failed to fetch courses for the selected student.');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const loadStudentsWithCourses = async () => {
-      const studentsData = await Promise.all(
-        selectedStudents.map((student) => fetchCourses(student))
-      );
-      setStudentsWithCourses(studentsData);
-    };
-
-    loadStudentsWithCourses();
-  }, [selectedStudents]);
-
-  // Handle clicking a student to show detailed information
-  const handleStudentClick = (student) => {
-    setActiveStudent(student);
-  };
+    fetchCourses();
+  }, [selectedStudent]);
 
   return (
     <div>
-      <h2>Studenzts</h2>
-      {studentsWithCourses.length > 0 ? (
-        <ul>
-          {studentsWithCourses.map((student) => (
-            <li 
-              key={student.id} 
-              style={{ cursor: 'pointer', color: 'blue' }}
-              onClick={() => handleStudentClick(student)}
-            >
-              {student.fullname}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No students selected</p>
-      )}
-
-      {activeStudent && (
+      {loading ? (
+        <p>Loading courses...</p>
+      ) : error ? (
+        <p style={{ color: 'red' }}>{error}</p>
+      ) : studentWithCourses ? (
         <div>
-          <h2>{activeStudent.fullname}</h2>
-          <p>Email: {activeStudent.email || 'N/A'}</p>
-          <p>Phone: {activeStudent.phone || 'N/A'}</p>
+          <h2>{studentWithCourses.fullname}'s Details</h2>
+          <p>Email: {studentWithCourses.email || 'N/A'}</p>
+          <p>Phone: {studentWithCourses.phone || 'N/A'}</p>
 
           <h3>Enrolled Courses</h3>
-          {activeStudent.courses && activeStudent.courses.length > 0 ? (
+          {studentWithCourses.courses.length > 0 ? (
             <ul>
-              {activeStudent.courses.map((course) => (
+              {studentWithCourses.courses.map((course) => (
                 <li key={course.id}>{course.fullname}</li>
               ))}
             </ul>
           ) : (
-            <p>No enrolled courses</p>
+            <p>No courses found for this student.</p>
           )}
         </div>
+      ) : (
+        <p>No student selected.</p>
       )}
     </div>
   );

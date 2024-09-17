@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
 import StudentSearchComponent from './StudentSearchComponent';
 import StudentDetailsComponent from './StudentDetailsComponent';
-import './StudentManager.css';
 
 const StudentManager = () => {
-  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
-  // Handle adding selected students
-  const handleAddStudents = (students) => {
-    setSelectedStudents(students);
+  // Handle student selection
+  const handleStudentSelect = (student) => {
+    setSelectedStudent(student);
   };
 
   return (
-    <div className='student-manager-page'>
-      <h1>Student Search</h1>
-      <StudentSearchComponent onAddStudents={handleAddStudents} />
-
-      {selectedStudents.length > 0 && (
-        <StudentDetailsComponent selectedStudents={selectedStudents} />
-      )}
+    <div>
+      {/* Pass handleStudentSelect to the search component */}
+      <StudentSearchComponent onStudentSelect={handleStudentSelect} />
+      
+      {/* Pass selected student to the details component */}
+      {selectedStudent && <StudentDetailsComponent selectedStudent={selectedStudent} />}
     </div>
   );
 };
