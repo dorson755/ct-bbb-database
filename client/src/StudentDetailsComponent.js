@@ -29,7 +29,7 @@ const StudentDetailsComponent = ({ selectedStudents }) => {
 
   return (
     <div>
-      <h2>Students</h2>
+      <h2>Studenzts</h2>
       {studentsWithCourses.length > 0 ? (
         <ul>
           {studentsWithCourses.map((student) => (
