@@ -10,6 +10,7 @@ const StudentSearchComponent = ({ onStudentSelect }) => {
   const [warning, setWarning] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Fetch students based on email or full name
   const fetchStudents = async () => {
     try {
       if (!email && !fullName) {
@@ -20,12 +21,13 @@ const StudentSearchComponent = ({ onStudentSelect }) => {
       setWarning(null);
       setLoading(true);
 
+      // Build query string based on search inputs
       let query = '';
       if (email) {
         query += `email=${encodeURIComponent(email)}`;
       }
       if (fullName) {
-        if (query) query += '&';
+        if (query) query += '&'; // Only add '&' if email is already part of the query
         query += `fullName=${encodeURIComponent(fullName)}`;
       }
 
@@ -37,6 +39,7 @@ const StudentSearchComponent = ({ onStudentSelect }) => {
       const data = await response.json();
       setStudents(data);
 
+      // If fullName search is provided, apply additional filtering
       if (fullName) {
         const result = data.filter(student =>
           student.fullname.toLowerCase().includes(fullName.toLowerCase())
@@ -53,6 +56,11 @@ const StudentSearchComponent = ({ onStudentSelect }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle clicking on a student to view their details
+  const handleStudentClick = (student) => {
+    onStudentSelect(student); // Trigger the modal by passing the student object to the parent component
   };
 
   return (
@@ -77,15 +85,15 @@ const StudentSearchComponent = ({ onStudentSelect }) => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {loading ? (
-        <div className="loader"></div>
+        <div className="loader"></div> // Display spinner animation
       ) : (
         <ul className="student-list">
           {filteredStudents.length > 0 ? (
             filteredStudents.map((student) => (
-              <li 
-                key={student.id} 
-                onClick={() => onStudentSelect(student)} // Pass selected student to parent
-                className="student-item"
+              <li
+                key={student.id}
+                onClick={() => handleStudentClick(student)} // Open modal on click
+                style={{ cursor: 'pointer' }} // Change cursor to pointer for better UX
               >
                 {student.fullname} ({student.email})
               </li>
