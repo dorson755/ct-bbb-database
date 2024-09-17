@@ -210,7 +210,30 @@ app.get('/api/searchStudents', async (req, res) => {
   }
 });
 
+// Route to get courses for a specific student by user ID
+app.get('/api/getStudentCourses', async (req, res) => {
+  const { userId } = req.query;
 
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  const url = `${MOODLE_URL}/webservice/rest/server.php?wstoken=${MOODLE_TOKEN}&wsfunction=core_enrol_get_users_courses&moodlewsrestformat=json&userid=${userId}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.errorcode) {
+      return res.status(500).json({ error: data.message });
+    }
+
+    res.status(200).json(data); // Send the courses data back to the frontend
+  } catch (error) {
+    console.error('Error fetching student courses:', error);
+    res.status(500).json({ error: 'Failed to fetch courses' });
+  }
+});
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));

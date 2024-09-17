@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 const StudentDetailsComponent = ({ selectedStudents }) => {
   const [studentsWithCourses, setStudentsWithCourses] = useState([]);
+  const [activeStudent, setActiveStudent] = useState(null); // State for the selected student
 
   // Fetch courses for each selected student
   useEffect(() => {
@@ -21,25 +22,47 @@ const StudentDetailsComponent = ({ selectedStudents }) => {
     loadStudentsWithCourses();
   }, [selectedStudents]);
 
+  // Handle clicking a student to show detailed information
+  const handleStudentClick = (student) => {
+    setActiveStudent(student);
+  };
+
   return (
     <div>
+      <h2>Students</h2>
       {studentsWithCourses.length > 0 ? (
-        studentsWithCourses.map((student) => (
-          <div key={student.id}>
-            <h2>{student.fullname}</h2>
-            <p>Email: {student.email}</p>
-            <p>Phone: {student.phone}</p>
+        <ul>
+          {studentsWithCourses.map((student) => (
+            <li 
+              key={student.id} 
+              style={{ cursor: 'pointer', color: 'blue' }}
+              onClick={() => handleStudentClick(student)}
+            >
+              {student.fullname}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No students selected</p>
+      )}
 
-            <h3>Enrolled Courses</h3>
+      {activeStudent && (
+        <div>
+          <h2>{activeStudent.fullname}</h2>
+          <p>Email: {activeStudent.email || 'N/A'}</p>
+          <p>Phone: {activeStudent.phone || 'N/A'}</p>
+
+          <h3>Enrolled Courses</h3>
+          {activeStudent.courses && activeStudent.courses.length > 0 ? (
             <ul>
-              {student.courses.map((course) => (
+              {activeStudent.courses.map((course) => (
                 <li key={course.id}>{course.fullname}</li>
               ))}
             </ul>
-          </div>
-        ))
-      ) : (
-        <p>No students selected</p>
+          ) : (
+            <p>No enrolled courses</p>
+          )}
+        </div>
       )}
     </div>
   );
