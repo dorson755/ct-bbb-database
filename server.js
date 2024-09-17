@@ -212,26 +212,31 @@ app.get('/api/searchStudents', async (req, res) => {
 
 // Route to get courses for a specific student by user ID
 app.get('/api/getStudentCourses', async (req, res) => {
-  const { userId } = req.query;
+  const { userId } = req.query; // Get the userId from the query parameters
 
+  // If userId is not provided, return an error
   if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
+    return res.status(400).json({ error: 'Missing userId parameter' });
   }
 
-  const url = `${MOODLE_URL}/webservice/rest/server.php?wstoken=${MOODLE_TOKEN}&wsfunction=core_enrol_get_users_courses&moodlewsrestformat=json&userid=${userId}`;
-
   try {
-    const response = await fetch(url);
-    const data = await response.json();
+    // Construct the Moodle API URL
+    const moodleUrl = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=core_enrol_get_users_courses&moodlewsrestformat=json&userid=${userId}`;
 
-    if (data.errorcode) {
-      return res.status(500).json({ error: data.message });
+    // Fetch the data from Moodle
+    const response = await fetch(moodleUrl);
+    const courses = await response.json();
+
+    // Check if the response is valid JSON or if it contains an error
+    if (response.ok) {
+      // Return the courses to the frontend
+      res.json(courses);
+    } else {
+      throw new Error('Failed to fetch courses from Moodle');
     }
-
-    res.status(200).json(data); // Send the courses data back to the frontend
   } catch (error) {
     console.error('Error fetching student courses:', error);
-    res.status(500).json({ error: 'Failed to fetch courses' });
+    res.status(500).json({ error: 'An error occurred while fetching student courses' });
   }
 });
 
