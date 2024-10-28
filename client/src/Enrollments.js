@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import StudentSearchComponent from './StudentSearchComponent';
-import StudentDetailsModal from './StudentDetailsModal'; // Import the modal component
+import EnrollmentDetailsModal from './EnrollmentsDetailsModal'; // Import the modal component
 
 const Enrollments = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -23,7 +23,7 @@ const Enrollments = () => {
       
       {/* Render the modal when a student is selected */}
       {selectedStudent && (
-        <StudentDetailsModal
+        <EnrollmentDetailsModal
           student={selectedStudent}
           onClose={handleCloseModal} // Pass the close handler to the modal
         />

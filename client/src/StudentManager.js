@@ -17,6 +17,7 @@ const StudentManager = () => {
 
   return (
     <div>
+      <h1>Student Manager</h1>
       {/* Pass the handleStudentSelect function to the search component */}
       <StudentSearchComponent onStudentSelect={handleStudentSelect} />
       
