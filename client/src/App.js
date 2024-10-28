@@ -7,6 +7,7 @@ import LiveClasses from './LiveClasses'; // Import Live Classes component
 import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
 import SchedulePage from './SchedulePage'; // Import Schedule Page component
 import StudentManager from './StudentManager';
+import Enrollments from './Enrollments';
 import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
 
 const App = () => {
@@ -22,6 +23,7 @@ const App = () => {
               <li><Link to="/recordings"><img src='/assets/records.png' alt="Recordings" className="sidebar-logo" /></Link></li>
               <li><Link to="/schedule"><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></Link></li>
               <li><Link to="/student-manager"><img src='/assets/search.png' alt="Student Manager" className="sidebar-logo" /></Link></li>
+              <li><Link to="/enrollments"><img src='/assets/enrollments.png' alt="Enrollments" className="sidebar-logo" /></Link></li>
               <li><a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
                 <img src='/assets/site.png' alt="Main Site" className="sidebar-logo" />
               </a></li>
@@ -60,6 +62,12 @@ const App = () => {
                         <img src='/assets/search.gif' alt="Student Manager" className="card-img" />
                       </div>
                     </Link>
+                    <Link to="/enrollments">
+                      <div className="card">
+                        <h3>Enrollments</h3>
+                        <img src='/assets/enrollments.gif' alt="Enrollments" className="card-img" />
+                      </div>
+                    </Link>
                     <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
                       <div className="card">
                         <h3>Site</h3>
@@ -81,6 +89,9 @@ const App = () => {
 
               {/* Student Manager Page Route */}
               <Route path="/student-manager" element={<StudentManager />} />
+
+              {/* Enrollments Page Route */}
+              <Route path="/enrollments" element={<Enrollments />} />
             </Routes>
           </div>
         </div>
