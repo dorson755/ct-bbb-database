@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import StudentSearchComponent from './StudentSearchComponent';
-import EnrollmentDetailsModal from './EnrollmentsDetailsModal'; // Import the modal component
+import EnrollmentDetailsModal from './EnrollmentDetailsModal'; // Import the modal component
 
 const Enrollments = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
