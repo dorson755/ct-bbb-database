@@ -1,0 +1,157 @@
+/* SchedulePage.css */
+
+.schedule-page-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  
+  .schedule-page-container .notification {
+    background-color: #ffeb3b;
+    color: #000;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    text-align: center;
+  }
+  
+  .schedule-page-container .name-input-container,
+  .schedule-page-container .role-selection {
+    margin-bottom: 20px;
+  }
+  
+  .schedule-page-container input[type="text"],
+  .schedule-page-container input[type="time"],
+  .schedule-page-container select {
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .schedule-page-container input[type="checkbox"] {
+    margin-right: 5px;
+  }
+  
+  .schedule-page-container .add-course-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  
+  .schedule-page-container .add-course-btn:hover {
+    background-color: #0056b3;
+  }
+  
+  .schedule-page-container .lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .schedule-page-container .form-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 100%;
+  }
+  
+  .schedule-page-container .form-input {
+    display: block;
+    width: calc(100% - 20px);
+    margin-bottom: 10px;
+  }
+  
+  .schedule-page-container .submit-btn,
+  .schedule-page-container .cancel-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  
+  .schedule-page-container .submit-btn {
+    background-color: #28a745;
+    color: #fff;
+  }
+  
+  .schedule-page-container .submit-btn:hover {
+    background-color: #218838;
+  }
+  
+  .schedule-page-container .cancel-btn {
+    background-color: #dc3545;
+    color: #fff;
+  }
+  
+  .schedule-page-container .cancel-btn:hover {
+    background-color: #c82333;
+  }
+  
+  .schedule-page-container .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .schedule-page-container .schedule-table th,
+  .schedule-page-container .schedule-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .schedule-page-container .schedule-table th {
+    background-color: #f8f9fa;
+  }
+  
+  .schedule-page-container .course {
+    margin-bottom: 10px;
+  }
+  
+  .schedule-page-container .status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 10px;
+  }
+  
+  .schedule-page-container .status-indicator.green {
+    background-color: #28a745;
+  }
+  
+  .schedule-page-container .status-indicator.red {
+    background-color: #dc3545;
+  }
+  
+  .schedule-page-container .join-btn {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .schedule-page-container .join-btn:hover {
+    background-color: #0056b3;
+  }
+  
