@@ -3,20 +3,21 @@ import { Modal, Button, Spinner, Form } from 'react-bootstrap';
 
 const EnrollmentDetailsModal = ({ student, onClose }) => {
   const [courses, setCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]); // For filtered results
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(''); // For searching courses
-  const [searchResults, setSearchResults] = useState([]); // List of searched courses
   const [enrollLoading, setEnrollLoading] = useState(false); // For enrolling
 
   useEffect(() => {
-    const fetchStudentCourses = async () => {
+    const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/getStudentCourses?userId=${student.id}`);
+        const response = await fetch(`/api/getCourses`);
         const data = await response.json();
         setCourses(data);
+        setFilteredCourses(data); // Initialize with all courses
       } catch (error) {
-        console.error('Error fetching student courses:', error);
+        console.error('Error fetching courses:', error);
         setCourses([]);
       } finally {
         setLoading(false);
@@ -24,20 +25,17 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
     };
 
     if (student) {
-      fetchStudentCourses();
+      fetchCourses();
     }
   }, [student]);
 
-  // Handle searching courses
-  const handleSearchCourses = async () => {
-    try {
-      const response = await fetch(`/api/searchCourses?courseName=${searchQuery}`);
-      const data = await response.json();
-      setSearchResults(data);
-    } catch (error) {
-      console.error('Error searching courses:', error);
-      setSearchResults([]);
-    }
+  // Filter courses based on search query
+  const handleSearchCourses = () => {
+    const lowercasedQuery = searchQuery.toLowerCase();
+    const filtered = courses.filter((course) =>
+      course.fullname.toLowerCase().includes(lowercasedQuery)
+    );
+    setFilteredCourses(filtered);
   };
 
   // Handle enrolling the student in a course
@@ -82,21 +80,29 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
               <span className="visually-hidden">Loading courses...</span>
             </Spinner>
           </div>
-        ) : courses.length > 0 ? (
+        ) : filteredCourses.length > 0 ? (
           <ul>
-            {courses.map((course) => (
+            {filteredCourses.map((course) => (
               <li key={course.id}>
                 {course.fullname}
+                <Button
+                  variant="success"
+                  onClick={() => handleEnroll(course.id)}
+                  disabled={enrollLoading}
+                  className="ms-3"
+                >
+                  Enroll
+                </Button>
               </li>
             ))}
           </ul>
         ) : (
-          <p>No courses enrolled</p>
+          <p>No courses available</p>
         )}
 
-        <h4>Enroll in a Course</h4>
+        <h4>Search for a Course</h4>
         <Form.Group controlId="courseSearch">
-          <Form.Label>Search for Courses</Form.Label>
+          <Form.Label>Search Courses</Form.Label>
           <Form.Control
             type="text"
             placeholder="Enter course name"
@@ -107,23 +113,6 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
             Search
           </Button>
         </Form.Group>
-
-        {searchResults.length > 0 && (
-          <ul className="mt-3">
-            {searchResults.map((course) => (
-              <li key={course.id}>
-                {course.fullname}{' '}
-                <Button
-                  variant="success"
-                  onClick={() => handleEnroll(course.id)}
-                  disabled={enrollLoading}
-                >
-                  Enroll
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
