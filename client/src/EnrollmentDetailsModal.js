@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Spinner, FormControl } from 'react-bootstrap'; // Bootstrap components
 
-const EnrollmentDetailsModal = ({ student, onClose }) => {
+const StudentDetailsModal = ({ student, onClose }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(''); // State to store the filter string
@@ -83,4 +83,4 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
   );
 };
 
-export default EnrollmentDetailsModal;
+export default StudentDetailsModal;
