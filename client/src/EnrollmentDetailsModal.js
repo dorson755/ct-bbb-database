@@ -12,43 +12,46 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
   useEffect(() => {
     const fetchStudentCourses = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`/api/getStudentCourses?userId=${student.id}`);
         const data = await response.json();
         setEnrolledCourses(data);
       } catch (error) {
         console.error('Error fetching student courses:', error);
         setEnrolledCourses([]);
-      }
-    };
-
-    const fetchAllCourses = async () => {
-      try {
-        const response = await fetch(`/api/getCourses`);
-        const data = await response.json();
-        setAllCourses(data);
-        setFilteredCourses(data); // Initialize with all courses for search
-      } catch (error) {
-        console.error('Error fetching all courses:', error);
-        setAllCourses([]);
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchAllCourses = async () => {
+      try {
+        const response = await fetch('/api/getCourses'); // Adjust this endpoint if needed
+        const data = await response.json();
+        setAllCourses(data);
+      } catch (error) {
+        console.error('Error fetching all courses:', error);
+      }
+    };
+
     if (student) {
       fetchStudentCourses();
-      fetchAllCourses();
+      fetchAllCourses(); // Fetch all courses on student load
     }
   }, [student]);
 
   // Filter courses based on search query
-  const handleSearchCourses = () => {
-    const lowercasedQuery = searchQuery.toLowerCase();
-    const filtered = allCourses.filter((course) =>
-      course.fullname.toLowerCase().includes(lowercasedQuery)
-    );
-    setFilteredCourses(filtered);
-  };
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = allCourses.filter((course) =>
+        course.fullname.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredCourses(filtered);
+      console.log('Filtered courses:', filtered); // Debugging log
+    } else {
+      setFilteredCourses([]); // Clear results if no search query
+    }
+  }, [searchQuery, allCourses]);
 
   // Handle enrolling the student in a course
   const handleEnroll = async (courseId) => {
@@ -104,18 +107,15 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
           <p>No courses enrolled</p>
         )}
 
-        <h4>Search for a Course</h4>
+        <h4>Enroll in a Course</h4>
         <Form.Group controlId="courseSearch">
-          <Form.Label>Search Courses</Form.Label>
+          <Form.Label>Search for Courses</Form.Label>
           <Form.Control
             type="text"
             placeholder="Enter course name"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Button variant="primary" onClick={handleSearchCourses} className="mt-2">
-            Search
-          </Button>
         </Form.Group>
 
         {filteredCourses.length > 0 && (
