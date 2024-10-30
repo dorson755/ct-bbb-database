@@ -2,37 +2,49 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Spinner, Form } from 'react-bootstrap';
 
 const EnrollmentDetailsModal = ({ student, onClose }) => {
-  const [courses, setCourses] = useState([]);
+  const [enrolledCourses, setEnrolledCourses] = useState([]); // For enrolled courses
+  const [allCourses, setAllCourses] = useState([]); // For all available courses
   const [filteredCourses, setFilteredCourses] = useState([]); // For filtered results
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(''); // For searching courses
   const [enrollLoading, setEnrollLoading] = useState(false); // For enrolling
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchStudentCourses = async () => {
       try {
-        setLoading(true);
+        const response = await fetch(`/api/getStudentCourses?userId=${student.id}`);
+        const data = await response.json();
+        setEnrolledCourses(data);
+      } catch (error) {
+        console.error('Error fetching student courses:', error);
+        setEnrolledCourses([]);
+      }
+    };
+
+    const fetchAllCourses = async () => {
+      try {
         const response = await fetch(`/api/getCourses`);
         const data = await response.json();
-        setCourses(data);
-        setFilteredCourses(data); // Initialize with all courses
+        setAllCourses(data);
+        setFilteredCourses(data); // Initialize with all courses for search
       } catch (error) {
-        console.error('Error fetching courses:', error);
-        setCourses([]);
+        console.error('Error fetching all courses:', error);
+        setAllCourses([]);
       } finally {
         setLoading(false);
       }
     };
 
     if (student) {
-      fetchCourses();
+      fetchStudentCourses();
+      fetchAllCourses();
     }
   }, [student]);
 
   // Filter courses based on search query
   const handleSearchCourses = () => {
     const lowercasedQuery = searchQuery.toLowerCase();
-    const filtered = courses.filter((course) =>
+    const filtered = allCourses.filter((course) =>
       course.fullname.toLowerCase().includes(lowercasedQuery)
     );
     setFilteredCourses(filtered);
@@ -52,7 +64,7 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
       if (response.ok) {
         alert('Student successfully enrolled!');
         // Optionally refresh the student's enrolled courses
-        setCourses((prevCourses) => [...prevCourses, { id: courseId, fullname: 'Newly Enrolled Course' }]);
+        setEnrolledCourses((prevCourses) => [...prevCourses, { id: courseId, fullname: 'Newly Enrolled Course' }]);
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -80,24 +92,16 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
               <span className="visually-hidden">Loading courses...</span>
             </Spinner>
           </div>
-        ) : filteredCourses.length > 0 ? (
+        ) : enrolledCourses.length > 0 ? (
           <ul>
-            {filteredCourses.map((course) => (
+            {enrolledCourses.map((course) => (
               <li key={course.id}>
                 {course.fullname}
-                <Button
-                  variant="success"
-                  onClick={() => handleEnroll(course.id)}
-                  disabled={enrollLoading}
-                  className="ms-3"
-                >
-                  Enroll
-                </Button>
               </li>
             ))}
           </ul>
         ) : (
-          <p>No courses available</p>
+          <p>No courses enrolled</p>
         )}
 
         <h4>Search for a Course</h4>
@@ -113,6 +117,23 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
             Search
           </Button>
         </Form.Group>
+
+        {filteredCourses.length > 0 && (
+          <ul className="mt-3">
+            {filteredCourses.map((course) => (
+              <li key={course.id}>
+                {course.fullname}{' '}
+                <Button
+                  variant="success"
+                  onClick={() => handleEnroll(course.id)}
+                  disabled={enrollLoading}
+                >
+                  Enroll
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
