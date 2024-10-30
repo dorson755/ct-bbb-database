@@ -210,6 +210,48 @@ app.get('/api/searchStudents', async (req, res) => {
   }
 });
 
+// API route to enroll a student in a course
+app.post('/api/enrollStudent', async (req, res) => {
+  const { userId, courseId } = req.body;
+
+  if (!userId || !courseId) {
+    return res.status(400).json({ error: 'userId and courseId are required' });
+  }
+
+  const token = '11d9797670d74f22f8e4aa8483fab962'; // Replace with your actual token
+  const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=core_enrol_manual_enrol_users&moodlewsrestformat=json`;
+
+  const enrollments = [
+    {
+      roleid: 5, // 5 is typically the role ID for "student"
+      userid: userId,
+      courseid: courseId,
+    },
+  ];
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        enrolments: JSON.stringify(enrollments),
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data && !data.exception) {
+      res.status(200).json({ message: 'Student successfully enrolled!' });
+    } else {
+      res.status(500).json({ error: data.message || 'Error enrolling student' });
+    }
+  } catch (error) {
+    console.error('Error enrolling student:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 // Route to get courses for a specific student by user ID
 app.get('/api/getStudentCourses', async (req, res) => {
   const { userId } = req.query; // Get the userId from the query parameters
