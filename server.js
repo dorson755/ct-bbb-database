@@ -255,20 +255,31 @@ app.get('/api/searchCourses', async (req, res) => {
   }
 
   try {
+    // Construct the URL for the Moodle API request
+    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=core_course_get_courses&moodlewsrestformat=json`;
+
+    // Debug log: Show the generated URL in the server logs
+    console.log('Generated Moodle API URL:', url);
+
     // Fetch all courses from Moodle
-    const response = await fetch(
-      `${MOODLE_URL}/webservice/rest/server.php?wstoken=${MOODLE_TOKEN}&wsfunction=core_course_get_courses&moodlewsrestformat=json`
-    );
+    const response = await fetch(url);
     const data = await response.json();
 
-    if (data.error) {
-      return res.status(500).json({ error: data.error });
+    // Debug log: Show the fetched data or error in the logs
+    console.log('Response from Moodle API:', data);
+
+    if (!Array.isArray(data)) {
+      console.error('Unexpected API response:', data);
+      return res.status(500).json({ error: 'Invalid response from Moodle' });
     }
 
     // Filter courses based on the search query
     const filteredCourses = data.filter((course) =>
       course.fullname.toLowerCase().includes(courseName.toLowerCase())
     );
+
+    // Debug log: Show the filtered courses
+    console.log('Filtered Courses:', filteredCourses);
 
     // Send back the filtered courses
     res.json(filteredCourses);
@@ -277,6 +288,7 @@ app.get('/api/searchCourses', async (req, res) => {
     res.status(500).json({ error: 'Failed to retrieve courses' });
   }
 });
+
 
 //The code below is general code for the app to build,
 //and to assist with front and back end communication.
