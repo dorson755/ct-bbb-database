@@ -145,37 +145,7 @@ app.get('/api/deleteRecordings', async (req, res) => {
   }
 });
 
-// API route to save a course
-app.post('/api/saveCourse', async (req, res) => {
-  try {
-    const { name, startHour, endHour, days, bbbContextName } = req.body;
-
-    // Validate input
-    if (!name || !startHour || !endHour || !days || !bbbContextName) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    // Create a new course
-    const newCourse = new Course({ name, startHour, endHour, days, bbbContextName });
-    await newCourse.save();
-
-    res.status(201).json(newCourse);
-  } catch (error) {
-    console.error('Error saving course:', error);
-    res.status(500).json({ error: 'Error saving course' });
-  }
-});
-
-// API route to get all courses
-app.get('/api/getCourses', async (req, res) => {
-  try {
-    const courses = await Course.find();
-    res.status(200).json(courses);
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-    res.status(500).json({ error: 'Error fetching courses' });
-  }
-});
+//The code below refer to Moodle features
 
 // API route to search students
 app.get('/api/searchStudents', async (req, res) => {
