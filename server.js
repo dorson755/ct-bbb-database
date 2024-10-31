@@ -214,38 +214,6 @@ app.get('/api/getStudentCourses', async (req, res) => {
 });
 
 
-// Enroll a student in a course via Moodle
-app.post('/api/enrollStudent', async (req, res) => {
-  const { userId, courseId, roleId } = req.body;
-  try {
-    // Moodle API call to enroll the student
-    const moodleResponse = await fetch(`https://cybertech242-online.com/webservice/rest/server.php`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        'wstoken': '11d9797670d74f22f8e4aa8483fab962',
-        'wsfunction': 'enrol_manual_enrol_users',
-        'moodlewsrestformat': 'json',
-        'enrolments[0][roleid]': roleId,
-        'enrolments[0][userid]': userId,
-        'enrolments[0][courseid]': courseId,
-      })
-    });
-
-    const data = await moodleResponse.json();
-    if (data.errorcode) {
-      return res.status(400).json({ error: data.message });
-    }
-
-    // Success
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error enrolling student:', error);
-    res.status(500).json({ error: 'Enrollment failed' });
-  }
-});
-
-
 // Search courses by course name
 app.get('/api/searchCourses', async (req, res) => {
   const { courseName } = req.query;
@@ -288,6 +256,44 @@ app.get('/api/searchCourses', async (req, res) => {
     res.status(500).json({ error: 'Failed to retrieve courses' });
   }
 });
+
+
+// API route to enroll students in courses
+app.post('/api/enrollStudent', async (req, res) => {
+  const { userId, courseId, roleId } = req.body;
+
+  try {
+    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
+
+    const enrolmentData = {
+      enrolments: [
+        {
+          roleid: roleId, // Use 5 for student, 3 for teacher
+          userid: userId,
+          courseid: courseId
+        }
+      ]
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(enrolmentData),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      res.status(200).json({ message: 'Enrollment successful' });
+    } else {
+      res.status(400).json({ error: result.error || 'Enrollment failed' });
+    }
+  } catch (error) {
+    console.error('Error during enrollment:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 
 //The code below is general code for the app to build,
