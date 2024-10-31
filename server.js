@@ -221,7 +221,7 @@ app.post('/api/enrollStudent', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        'wstoken': 'your_moodle_api_token',
+        'wstoken': '11d9797670d74f22f8e4aa8483fab962',
         'wsfunction': 'enrol_manual_enrol_users',
         'moodlewsrestformat': 'json',
         'enrolments[0][roleid]': roleId,
