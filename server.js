@@ -180,47 +180,6 @@ app.get('/api/searchStudents', async (req, res) => {
   }
 });
 
-// API route to enroll a student in a course
-app.post('/api/enrollStudent', async (req, res) => {
-  const { userId, courseId } = req.body;
-
-  if (!userId || !courseId) {
-    return res.status(400).json({ error: 'userId and courseId are required' });
-  }
-
-  const token = '11d9797670d74f22f8e4aa8483fab962'; // Replace with your actual token
-  const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=core_enrol_manual_enrol_users&moodlewsrestformat=json`;
-
-  const enrollments = [
-    {
-      roleid: 5, // 5 is typically the role ID for "student"
-      userid: userId,
-      courseid: courseId,
-    },
-  ];
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        enrolments: JSON.stringify(enrollments),
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data && !data.exception) {
-      res.status(200).json({ message: 'Student successfully enrolled!' });
-    } else {
-      res.status(500).json({ error: data.message || 'Error enrolling student' });
-    }
-  } catch (error) {
-    console.error('Error enrolling student:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 
 // Route to get courses for a specific student by user ID
 app.get('/api/getStudentCourses', async (req, res) => {
@@ -251,6 +210,42 @@ app.get('/api/getStudentCourses', async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching student courses' });
   }
 });
+
+
+// Enroll a student in a course via Moodle
+app.post('/api/enrollStudent', async (req, res) => {
+  const { userId, courseId, roleId } = req.body;
+  try {
+    // Moodle API call to enroll the student
+    const moodleResponse = await fetch(`https://cybertech242-online.com/webservice/rest/server.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        'wstoken': 'your_moodle_api_token',
+        'wsfunction': 'enrol_manual_enrol_users',
+        'moodlewsrestformat': 'json',
+        'enrolments[0][roleid]': roleId,
+        'enrolments[0][userid]': userId,
+        'enrolments[0][courseid]': courseId,
+      })
+    });
+
+    const data = await moodleResponse.json();
+    if (data.errorcode) {
+      return res.status(400).json({ error: data.message });
+    }
+
+    // Success
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error enrolling student:', error);
+    res.status(500).json({ error: 'Enrollment failed' });
+  }
+});
+
+
+//The code below is general code for the app to build,
+//and to assist with front and back end communication.
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
