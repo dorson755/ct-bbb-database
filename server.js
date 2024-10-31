@@ -145,7 +145,9 @@ app.get('/api/deleteRecordings', async (req, res) => {
   }
 });
 
+
 //The code below refer to Moodle features
+
 
 // API route to search students
 app.get('/api/searchStudents', async (req, res) => {
@@ -243,6 +245,38 @@ app.post('/api/enrollStudent', async (req, res) => {
   }
 });
 
+
+// Search courses by course name
+app.get('/api/searchCourses', async (req, res) => {
+  const { courseName } = req.query;
+
+  if (!courseName) {
+    return res.status(400).json({ error: 'Course name is required' });
+  }
+
+  try {
+    // Fetch all courses from Moodle
+    const response = await fetch(
+      `${MOODLE_URL}?wstoken=${MOODLE_TOKEN}&wsfunction=core_course_get_courses&moodlewsrestformat=json`
+    );
+    const data = await response.json();
+
+    if (data.error) {
+      return res.status(500).json({ error: data.error });
+    }
+
+    // Filter courses based on the search query
+    const filteredCourses = data.filter((course) =>
+      course.fullname.toLowerCase().includes(courseName.toLowerCase())
+    );
+
+    // Send back the filtered courses
+    res.json(filteredCourses);
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).json({ error: 'Failed to retrieve courses' });
+  }
+});
 
 //The code below is general code for the app to build,
 //and to assist with front and back end communication.
