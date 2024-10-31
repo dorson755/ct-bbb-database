@@ -280,13 +280,15 @@ app.post('/api/enrollStudent', async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(enrolmentData),
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      res.status(200).json({ message: 'Enrollment successful' });
+    
+    const data = await response.json();
+    console.log("Moodle API response:", data);
+    
+    if (response.ok && !data.exception) {
+      res.status(200).json({ message: 'Enrollment successful!' });
     } else {
-      res.status(400).json({ error: result.error || 'Enrollment failed' });
+      console.error('Enrollment failed:', data);
+      res.status(500).json({ message: 'Failed to enroll student', error: data });
     }
   } catch (error) {
     console.error('Error during enrollment:', error);
