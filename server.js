@@ -263,7 +263,7 @@ app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
 
   try {
-    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
+    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
 
     const enrolmentData = {
       enrolments: [
