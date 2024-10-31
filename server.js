@@ -257,7 +257,7 @@ app.get('/api/searchCourses', async (req, res) => {
   try {
     // Fetch all courses from Moodle
     const response = await fetch(
-      `${MOODLE_URL}?wstoken=${MOODLE_TOKEN}&wsfunction=core_course_get_courses&moodlewsrestformat=json`
+      `${MOODLE_URL}/webservice/rest/server.php?wstoken=${MOODLE_TOKEN}&wsfunction=core_course_get_courses&moodlewsrestformat=json`
     );
     const data = await response.json();
 
