@@ -260,15 +260,15 @@ app.get('/api/searchCourses', async (req, res) => {
 
 // API route to enroll students in courses
 app.post('/api/enrollStudent', async (req, res) => {
-  const { userId, courseId, roleId } = req.body; // Make sure you're sending roleId as well
-  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Replace with your token
+  const { userId, courseId, roleId } = req.body;
+  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Your Moodle token
   const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
 
   const body = {
     enrolments: [{
-      roleid: roleId,    // Role: 5 for student, other values for different roles
-      userid: userId,    // User ID from Moodle
-      courseid: courseId // Course ID from Moodle
+      roleid: roleId,
+      userid: userId,
+      courseid: courseId
     }]
   };
 
@@ -282,9 +282,14 @@ app.post('/api/enrollStudent', async (req, res) => {
     });
 
     const data = await response.json();
-    if (response.ok) {
+
+    // Log the full response for debugging
+    console.log('Moodle API Response:', data);
+
+    if (response.ok && !data.exception) {
       res.json({ success: true, message: 'Enrollment successful!' });
     } else {
+      console.error('Error from Moodle API:', data);
       res.status(500).json({ success: false, error: data });
     }
   } catch (error) {
@@ -292,7 +297,6 @@ app.post('/api/enrollStudent', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
 
 
 
