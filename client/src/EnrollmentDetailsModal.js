@@ -47,18 +47,18 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: student.id,
-          courseId,
-          roleId: selectedRole, // Pass the selected role ID
+          userId: student.id,    // Student's Moodle ID
+          courseId,              // Selected Course ID
+          roleId: selectedRole   // Either student or teacher role ID
         }),
       });
-
+  
       const data = await response.json();
-      if (response.ok) {
+      if (data.success) {
         alert('Student successfully enrolled!');
         setCourses((prevCourses) => [...prevCourses, { id: courseId, fullname: 'Newly Enrolled Course' }]);
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error.message || 'Failed to enroll student'}`);
       }
     } catch (error) {
       console.error('Error enrolling student:', error);
@@ -111,11 +111,11 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
         </Form.Group>
 
         {/* Role Selection Dropdown */}
-        <Form.Group controlId="roleSelection" className="mt-3">
+        <Form.Group controlId="roleSelect">
           <Form.Label>Select Role</Form.Label>
           <Form.Control as="select" value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-            <option value="5">Student</option> {/* Student role ID */}
-            <option value="3">Teacher</option> {/* Teacher role ID */}
+            <option value="5">Student</option>
+            <option value="3">Teacher</option> {/* Adjust the role ID as needed */}
           </Form.Control>
         </Form.Group>
 
