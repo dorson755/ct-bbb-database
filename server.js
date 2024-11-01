@@ -259,59 +259,28 @@ app.get('/api/searchCourses', async (req, res) => {
 
 
 // API route to enroll students in courses
-app.post('/enrollStudent', async (req, res) => {
+app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
 
-  const enrolmentParams = {
-      enrolments: [
-          {
-              roleid: roleId,
-              userid: userId,
-              courseid: courseId
-          }
-      ]
+  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Replace with your actual token
+  const apiUrl = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
+
+  const data = {
+    enrolments: [
+      {
+        roleid: roleId || 5, // Default role to student (5) if not specified
+        userid: userId,
+        courseid: courseId,
+      },
+    ],
   };
 
   try {
-      const response = await fetch('https://cybertech242-online.com/webservice/rest/server.php', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-              wstoken: '4e212f3770c28ce6a34a057d6f684ca1',
-              wsfunction: 'enrol_manual_enrol_users',
-              moodlewsrestformat: 'json',
-              ...enrolmentParams.enrolments[0],
-          })
-      });
-
-      // Log the response status for debugging
-      const responseText = await response.text(); // Read as text first
-      console.log('Response Text:', responseText); // Log the raw response
-
-      // Check if the response is valid JSON
-      let data;
-      try {
-          data = JSON.parse(responseText); // Try parsing it as JSON
-      } catch (error) {
-          alert('Failed to parse response as JSON. Raw response: ' + responseText);
-          return res.status(500).json({ message: 'Invalid response format' });
-      }
-
-      // Proceed with normal processing
-      if (data && !data.exception) {
-          alert('Enrollment successful!'); // Show success alert
-          res.json({ message: 'Enrollment successful' });
-      } else {
-          // Enhanced error feedback
-          const errorMessage = data && data.message ? data.message : 'Unknown error';
-          alert('Enrollment failed: ' + errorMessage); // Show detailed error message
-          res.status(400).json({ message: 'Enrollment failed', error: data });
-      }
+    const response = await axios.post(apiUrl, data);
+    res.status(200).json({ message: 'Enrollment successful', response: response.data });
   } catch (error) {
-      alert('Error enrolling student: ' + error.message); // Show detailed error message
-      res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Enrollment error:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Enrollment failed', details: error.response ? error.response.data : error.message });
   }
 });
 
