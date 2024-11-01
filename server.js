@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import mongoose from 'mongoose'; // Import Mongoose
 import path from 'path'; // Added to serve static files
 import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
-import Course from './models/Course.js'; // Import Course model
+//import Course from './models/Course.js'; // Import Course model
 
 
 const app = express();
@@ -259,42 +259,62 @@ app.get('/api/searchCourses', async (req, res) => {
 
 
 // API route to enroll students in courses
-app.post('/api/enrollStudent', async (req, res) => {
+app.post('/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
 
-  try {
-    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
-
-    const enrolmentData = {
+  const enrolmentParams = {
       enrolments: [
-        {
-          roleid: roleId, // Use 5 for student, 3 for teacher
-          userid: userId,
-          courseid: courseId
-        }
+          {
+              roleid: roleId,
+              userid: userId,
+              courseid: courseId
+          }
       ]
-    };
+  };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(enrolmentData),
-    });
-    
-    const data = await response.json();
-    console.log("Moodle API response:", data);
-    
-    if (response.ok && !data.exception) {
-      res.status(200).json({ message: 'Enrollment successful!' });
-    } else {
-      console.error('Enrollment failed:', data);
-      res.status(500).json({ message: 'Failed to enroll student', error: data });
-    }
+  try {
+      const response = await fetch('https://cybertech242-online.com/webservice/rest/server.php', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+              wstoken: '4e212f3770c28ce6a34a057d6f684ca1',
+              wsfunction: 'enrol_manual_enrol_users',
+              moodlewsrestformat: 'json',
+              ...enrolmentParams.enrolments[0],
+          })
+      });
+
+      // Log the response status for debugging
+      const responseText = await response.text(); // Read as text first
+      console.log('Response Text:', responseText); // Log the raw response
+
+      // Check if the response is valid JSON
+      let data;
+      try {
+          data = JSON.parse(responseText); // Try parsing it as JSON
+      } catch (error) {
+          alert('Failed to parse response as JSON. Raw response: ' + responseText);
+          return res.status(500).json({ message: 'Invalid response format' });
+      }
+
+      // Proceed with normal processing
+      if (data && !data.exception) {
+          alert('Enrollment successful!'); // Show success alert
+          res.json({ message: 'Enrollment successful' });
+      } else {
+          // Enhanced error feedback
+          const errorMessage = data && data.message ? data.message : 'Unknown error';
+          alert('Enrollment failed: ' + errorMessage); // Show detailed error message
+          res.status(400).json({ message: 'Enrollment failed', error: data });
+      }
   } catch (error) {
-    console.error('Error during enrollment:', error);
-    res.status(500).json({ error: 'Internal server error' });
+      alert('Error enrolling student: ' + error.message); // Show detailed error message
+      res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 
 
