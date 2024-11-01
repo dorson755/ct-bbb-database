@@ -280,7 +280,7 @@ app.post('/enrollStudent', async (req, res) => {
               'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-              wstoken: '4e212f3770c28ce6a34a057d6f684ca1',
+              wstoken: 'YOUR_TOKEN_HERE',
               wsfunction: 'enrol_manual_enrol_users',
               moodlewsrestformat: 'json',
               // Use the enrolmentParams object to construct the request body
