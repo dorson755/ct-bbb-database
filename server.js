@@ -286,8 +286,7 @@ app.post('/enrollStudent', async (req, res) => {
           })
       });
 
-      // Log the response status and text for debugging
-      console.log('Response Status:', response.status);
+      // Log the response status for debugging
       const responseText = await response.text(); // Read as text first
       console.log('Response Text:', responseText); // Log the raw response
 
@@ -296,18 +295,20 @@ app.post('/enrollStudent', async (req, res) => {
       try {
           data = JSON.parse(responseText); // Try parsing it as JSON
       } catch (error) {
-          console.error('Failed to parse response as JSON:', error);
+          alert('Failed to parse response as JSON: ' + error);
           return res.status(500).json({ message: 'Invalid response format' });
       }
 
       // Proceed with normal processing
       if (data && !data.exception) {
+          alert('Enrollment successful'); // Show success alert
           res.json({ message: 'Enrollment successful' });
       } else {
+          alert('Enrollment failed: ' + (data.message || 'Unknown error')); // Show error alert
           res.status(400).json({ message: 'Enrollment failed', error: data });
       }
   } catch (error) {
-      console.error('Error enrolling student:', error);
+      alert('Error enrolling student: ' + error); // Show error alert
       res.status(500).json({ message: 'Server error' });
   }
 });
