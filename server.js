@@ -259,42 +259,46 @@ app.get('/api/searchCourses', async (req, res) => {
 
 
 // API route to enroll students in courses
-app.post('/api/enrollStudent', async (req, res) => {
-  const { userId, courseId, roleId } = req.body;
-  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Your Moodle token
-  const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
+app.post('/enrollStudent', async (req, res) => {
+  const { userId, courseId, roleId } = req.body; // Get these values from the request body
 
-  const body = {
-    enrolments: [{
-      roleid: roleId,
-      userid: userId,
-      courseid: courseId
-    }]
+  // Construct the enrolment parameters
+  const enrolmentParams = {
+      enrolments: [
+          {
+              roleid: roleId,
+              userid: userId,
+              courseid: courseId
+          }
+      ]
   };
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams(body).toString()
-    });
+      const response = await fetch('https://cybertech242-online.com/webservice/rest/server.php', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+              wstoken: '4e212f3770c28ce6a34a057d6f684ca1',
+              wsfunction: 'enrol_manual_enrol_users',
+              moodlewsrestformat: 'json',
+              // Use the enrolmentParams object to construct the request body
+              ...enrolmentParams.enrolments[0], // Spread the first enrolment object
+          })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
+      console.log(data); // Log the response from Moodle for debugging
 
-    // Log the full response for debugging
-    console.log('Moodle API Response:', data);
-
-    if (response.ok && !data.exception) {
-      res.json({ success: true, message: 'Enrollment successful!' });
-    } else {
-      console.error('Error from Moodle API:', data);
-      res.status(500).json({ success: false, error: data });
-    }
+      if (data && !data.exception) {
+          res.json({ message: 'Enrollment successful' });
+      } else {
+          res.status(400).json({ message: 'Enrollment failed', error: data });
+      }
   } catch (error) {
-    console.error('Error enrolling student:', error);
-    res.status(500).json({ success: false, error: error.message });
+      console.error('Error enrolling student:', error);
+      res.status(500).json({ message: 'Server error' });
   }
 });
 
