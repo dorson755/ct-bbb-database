@@ -260,9 +260,8 @@ app.get('/api/searchCourses', async (req, res) => {
 
 // API route to enroll students in courses
 app.post('/enrollStudent', async (req, res) => {
-  const { userId, courseId, roleId } = req.body; // Get these values from the request body
+  const { userId, courseId, roleId } = req.body;
 
-  // Construct the enrolment parameters
   const enrolmentParams = {
       enrolments: [
           {
@@ -283,14 +282,25 @@ app.post('/enrollStudent', async (req, res) => {
               wstoken: 'YOUR_TOKEN_HERE',
               wsfunction: 'enrol_manual_enrol_users',
               moodlewsrestformat: 'json',
-              // Use the enrolmentParams object to construct the request body
-              ...enrolmentParams.enrolments[0], // Spread the first enrolment object
+              ...enrolmentParams.enrolments[0],
           })
       });
 
-      const data = await response.json();
-      console.log(data); // Log the response from Moodle for debugging
+      // Log the response status and text for debugging
+      console.log('Response Status:', response.status);
+      const responseText = await response.text(); // Read as text first
+      console.log('Response Text:', responseText); // Log the raw response
 
+      // Check if the response is valid JSON
+      let data;
+      try {
+          data = JSON.parse(responseText); // Try parsing it as JSON
+      } catch (error) {
+          console.error('Failed to parse response as JSON:', error);
+          return res.status(500).json({ message: 'Invalid response format' });
+      }
+
+      // Proceed with normal processing
       if (data && !data.exception) {
           res.json({ message: 'Enrollment successful' });
       } else {
