@@ -262,30 +262,26 @@ app.get('/api/searchCourses', async (req, res) => {
 app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
 
-  if (!userId || !courseId || !roleId) {
-    return res.status(400).json({ message: 'Missing required parameters: userId, courseId, or roleId' });
-  }
-
   try {
-    // Construct the Moodle API URL
     const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
 
-    // Moodle expects URL-encoded form data, so we use URLSearchParams
-    const enrolmentData = new URLSearchParams();
-    enrolmentData.append('enrolments[0][roleid]', roleId);  // 5 for student, 3 for teacher
-    enrolmentData.append('enrolments[0][userid]', userId);
-    enrolmentData.append('enrolments[0][courseid]', courseId);
-
-    // Send the request to Moodle API
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },  // Use form-urlencoded
-      body: enrolmentData.toString(),
+    const enrolmentData = new URLSearchParams({
+      'enrolments[0][roleid]': roleId, // Use 5 for student, 3 for teacher
+      'enrolments[0][userid]': userId,
+      'enrolments[0][courseid]': courseId,
     });
 
-    const data = await response.json();  // Parse the response from the API
+    // Log the full request for debugging
+    console.log('Sending enrolment request to Moodle API:', enrolmentData.toString());
 
-    console.log("Moodle API response:", data);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: enrolmentData,
+    });
+
+    const data = await response.json();
+    console.log('Moodle API response:', data);
 
     if (response.ok && !data.exception) {
       res.status(200).json({ message: 'Enrollment successful!' });
@@ -298,6 +294,7 @@ app.post('/api/enrollStudent', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 
