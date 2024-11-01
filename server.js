@@ -258,7 +258,7 @@ app.get('/api/searchCourses', async (req, res) => {
 });
 
 
-//API route to enroll students in courses
+// API route to enroll students in courses
 app.post('/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
 
