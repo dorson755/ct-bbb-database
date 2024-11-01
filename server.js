@@ -279,7 +279,7 @@ app.post('/enrollStudent', async (req, res) => {
               'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-              wstoken: 'YOUR_TOKEN_HERE',
+              wstoken: '4e212f3770c28ce6a34a057d6f684ca1',
               wsfunction: 'enrol_manual_enrol_users',
               moodlewsrestformat: 'json',
               ...enrolmentParams.enrolments[0],
@@ -295,21 +295,23 @@ app.post('/enrollStudent', async (req, res) => {
       try {
           data = JSON.parse(responseText); // Try parsing it as JSON
       } catch (error) {
-          alert('Failed to parse response as JSON: ' + error);
+          alert('Failed to parse response as JSON. Raw response: ' + responseText);
           return res.status(500).json({ message: 'Invalid response format' });
       }
 
       // Proceed with normal processing
       if (data && !data.exception) {
-          alert('Enrollment successful'); // Show success alert
+          alert('Enrollment successful!'); // Show success alert
           res.json({ message: 'Enrollment successful' });
       } else {
-          alert('Enrollment failed: ' + (data.message || 'Unknown error')); // Show error alert
+          // Enhanced error feedback
+          const errorMessage = data && data.message ? data.message : 'Unknown error';
+          alert('Enrollment failed: ' + errorMessage); // Show detailed error message
           res.status(400).json({ message: 'Enrollment failed', error: data });
       }
   } catch (error) {
-      alert('Error enrolling student: ' + error); // Show error alert
-      res.status(500).json({ message: 'Server error' });
+      alert('Error enrolling student: ' + error.message); // Show detailed error message
+      res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
