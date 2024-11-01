@@ -7,9 +7,8 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [enrollLoading, setEnrollLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('5'); // Default to 'Student'
+  const [selectedRole, setSelectedRole] = useState('5'); // Default to student role
 
-  // Fetch student's enrolled courses
   useEffect(() => {
     const fetchStudentCourses = async () => {
       try {
@@ -30,7 +29,6 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
     }
   }, [student]);
 
-  // Handle searching courses
   const handleSearchCourses = async () => {
     try {
       const response = await fetch(`/api/searchCourses?courseName=${searchQuery}`);
@@ -42,20 +40,22 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
     }
   };
 
-  // Handle enrolling the student in a course
   const handleEnroll = async (courseId) => {
     setEnrollLoading(true);
     try {
       const response = await fetch('/api/enrollStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: student.id, courseId, roleId: selectedRole }),
+        body: JSON.stringify({
+          userId: student.id,
+          courseId,
+          roleId: selectedRole, // Pass the selected role ID
+        }),
       });
 
       const data = await response.json();
       if (response.ok) {
         alert('Student successfully enrolled!');
-        // Refresh the list of enrolled courses
         setCourses((prevCourses) => [...prevCourses, { id: courseId, fullname: 'Newly Enrolled Course' }]);
       } else {
         alert(`Error: ${data.error}`);
@@ -110,25 +110,24 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
           </Button>
         </Form.Group>
 
+        {/* Role Selection Dropdown */}
+        <Form.Group controlId="roleSelection" className="mt-3">
+          <Form.Label>Select Role</Form.Label>
+          <Form.Control as="select" value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+            <option value="5">Student</option> {/* Student role ID */}
+            <option value="3">Teacher</option> {/* Teacher role ID */}
+          </Form.Control>
+        </Form.Group>
+
         {searchResults.length > 0 && (
           <ul className="mt-3">
             {searchResults.map((course) => (
               <li key={course.id}>
                 {course.fullname}{' '}
-                <Form.Control
-                  as="select"
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="d-inline w-auto"
-                >
-                  <option value="5">Student</option>
-                  <option value="3">Teacher</option>
-                </Form.Control>
                 <Button
                   variant="success"
                   onClick={() => handleEnroll(course.id)}
                   disabled={enrollLoading}
-                  className="ms-2"
                 >
                   Enroll
                 </Button>

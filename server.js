@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import mongoose from 'mongoose'; // Import Mongoose
 import path from 'path'; // Added to serve static files
 import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
-import Course from './models/Course.js'; // Import Course model
+//import Course from './models/Course.js'; // Import Course model
 
 
 const app = express();
@@ -259,42 +259,36 @@ app.get('/api/searchCourses', async (req, res) => {
 
 
 // API route to enroll students in courses
-app.post('/api/enrollStudent', async (req, res) => {
-  const { userId, courseId, roleId } = req.body;
+const enrolStudentInCourse = async (userId, courseId, roleId) => {
+  const url = 'https://cybertech242-online.com/webservice/rest/server.php';
+  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // replace with a secure way of storing token
+
+  const body = new URLSearchParams({
+    wstoken: token,
+    wsfunction: 'enrol_manual_enrol_users',
+    moodlewsrestformat: 'json',
+    'enrolments[0][roleid]': roleId,
+    'enrolments[0][userid]': userId,
+    'enrolments[0][courseid]': courseId,
+  });
 
   try {
-    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
-
-    const enrolmentData = {
-      enrolments: [
-        {
-          roleid: roleId, // Use 5 for student, 3 for teacher
-          userid: userId,
-          courseid: courseId
-        }
-      ]
-    };
-
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(enrolmentData),
+      body,
     });
-    
-    const data = await response.json();
-    console.log("Moodle API response:", data);
-    
-    if (response.ok && !data.exception) {
-      res.status(200).json({ message: 'Enrollment successful!' });
-    } else {
-      console.error('Enrollment failed:', data);
-      res.status(500).json({ message: 'Failed to enroll student', error: data });
+    const result = await response.json();
+
+    if (result.errorcode) {
+      throw new Error(result.message);
     }
+
+    return result;
   } catch (error) {
-    console.error('Error during enrollment:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error enrolling student:', error);
+    throw error;
   }
-});
+};
 
 
 
