@@ -261,23 +261,28 @@ app.get('/api/searchCourses', async (req, res) => {
 // API route to enroll students in courses
 app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
-  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // replace with your token
+  const token = 'your_token_here'; // Replace with your token
 
   try {
+    // Construct the URL
     const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
 
-    const body = {
-      enrolments: [{
-        roleid: roleId,
-        userid: userId,
-        courseid: courseId
-      }]
-    };
+    // Construct the body of the POST request
+    const body = new URLSearchParams({
+      'enrolments[0][roleid]': roleId,
+      'enrolments[0][userid]': userId,
+      'enrolments[0][courseid]': courseId
+    }).toString();
 
+    // Log the URL and body for debugging purposes
+    console.log('Moodle Enrollment URL:', url);
+    console.log('Request Body:', body);
+
+    // Make the request to Moodle
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(body),
+      body
     });
 
     const data = await response.json();

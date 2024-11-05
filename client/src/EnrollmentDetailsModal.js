@@ -42,14 +42,17 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
 
   const handleEnroll = async (courseId) => {
     setEnrollLoading(true);
+    console.log(`Attempting to enroll student ${student.id} in course ${courseId} with role ${roleId}`);
+  
     try {
       const response = await fetch('/api/enrollStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: student.id, courseId, roleId }),
       });
-
+  
       const data = await response.json();
+  
       if (response.ok) {
         alert('Student successfully enrolled!');
         setCourses((prevCourses) => [...prevCourses, { id: courseId, fullname: 'Newly Enrolled Course' }]);
@@ -63,6 +66,7 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
       setEnrollLoading(false);
     }
   };
+  
 
   return (
     <Modal show onHide={onClose} size="lg">
