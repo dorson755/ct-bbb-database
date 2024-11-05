@@ -261,7 +261,7 @@ app.get('/api/searchCourses', async (req, res) => {
 // API route to enroll students in courses
 app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
-  const token = 'your_token_here'; // Replace with your token
+  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Replace with your token
 
   try {
     // Construct the URL
