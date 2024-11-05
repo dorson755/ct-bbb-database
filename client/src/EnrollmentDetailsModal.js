@@ -7,7 +7,7 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [enrollLoading, setEnrollLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('5'); // Default to student role
+  const [roleId, setRoleId] = useState(5); // Default to Student role
 
   useEffect(() => {
     const fetchStudentCourses = async () => {
@@ -46,19 +46,15 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
       const response = await fetch('/api/enrollStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: student.id,    // Student's Moodle ID
-          courseId,              // Selected Course ID
-          roleId: selectedRole   // Either student or teacher role ID
-        }),
+        body: JSON.stringify({ userId: student.id, courseId, roleId }),
       });
-  
+
       const data = await response.json();
-      if (data.success) {
+      if (response.ok) {
         alert('Student successfully enrolled!');
         setCourses((prevCourses) => [...prevCourses, { id: courseId, fullname: 'Newly Enrolled Course' }]);
       } else {
-        alert(`Error: ${data.error.message || 'Failed to enroll student'}`);
+        alert(`Error: ${data.message}`);
       }
     } catch (error) {
       console.error('Error enrolling student:', error);
@@ -110,20 +106,15 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
           </Button>
         </Form.Group>
 
-        {/* Role Selection Dropdown */}
-        <Form.Group controlId="roleSelect">
-          <Form.Label>Select Role</Form.Label>
-          <Form.Control as="select" value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-            <option value="5">Student</option>
-            <option value="3">Teacher</option> {/* Adjust the role ID as needed */}
-          </Form.Control>
-        </Form.Group>
-
         {searchResults.length > 0 && (
           <ul className="mt-3">
             {searchResults.map((course) => (
               <li key={course.id}>
                 {course.fullname}{' '}
+                <Form.Select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="d-inline-block w-auto me-2">
+                  <option value={5}>Student</option>
+                  <option value={3}>Teacher</option>
+                </Form.Select>
                 <Button
                   variant="success"
                   onClick={() => handleEnroll(course.id)}

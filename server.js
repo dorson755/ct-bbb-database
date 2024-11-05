@@ -261,26 +261,35 @@ app.get('/api/searchCourses', async (req, res) => {
 // API route to enroll students in courses
 app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
-
-  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Replace with your actual token
-  const apiUrl = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
-
-  const data = {
-    enrolments: [
-      {
-        roleid: roleId || 5, // Default role to student (5) if not specified
-        userid: userId,
-        courseid: courseId,
-      },
-    ],
-  };
+  const token = 'your_token_here'; // replace with your token
 
   try {
-    const response = await axios.post(apiUrl, data);
-    res.status(200).json({ message: 'Enrollment successful', response: response.data });
+    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
+
+    const body = {
+      enrolments: [{
+        roleid: roleId,
+        userid: userId,
+        courseid: courseId
+      }]
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(body),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      res.json({ success: true, message: 'Enrollment successful', data });
+    } else {
+      res.status(400).json({ success: false, message: data.message });
+    }
   } catch (error) {
-    console.error('Enrollment error:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Enrollment failed', details: error.response ? error.response.data : error.message });
+    console.error('Error enrolling student:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
