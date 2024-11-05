@@ -144,7 +144,13 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
           </Button>
         </Form.Group>
 
-        {searchResults.length > 0 && (
+        {loading ? (
+          <div className="d-flex justify-content-center align-items-center">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading courses...</span>
+            </Spinner>
+          </div>
+        ) : searchResults.length > 0 && (
           <ul className="mt-3">
             {searchResults.map((course) => (
               <li key={course.id}>
