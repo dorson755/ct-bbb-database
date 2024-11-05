@@ -118,10 +118,10 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
               <li key={course.id}>
                 {course.fullname}
                 <Button
-                variant="danger"
-                onClick={() => handleUnenroll(course.id)}
+                  variant="danger"
+                  onClick={() => handleUnenroll(course.id)}
                 >
-                Unenroll
+                  Unenroll
                 </Button>
               </li>
             ))}
@@ -144,25 +144,55 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
           </Button>
         </Form.Group>
 
-        {searchResults.length > 0 && (
-          <ul className="mt-3">
-            {searchResults.map((course) => (
-              <li key={course.id}>
-                {course.fullname}{' '}
-                <Form.Select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="d-inline-block w-auto me-2">
-                  <option value={5}>Student</option>
-                  <option value={3}>Teacher</option>
-                </Form.Select>
-                <Button
-                  variant="success"
-                  onClick={() => handleEnroll(course.id)}
-                  disabled={enrollLoading}
-                >
-                  Enroll
-                </Button>
-              </li>
-            ))}
-          </ul>
+        {/* Loading spinner for course search */}
+        {searchLoading ? (
+          <div className="d-flex justify-content-center align-items-center mt-3">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Searching courses...</span>
+            </Spinner>
+          </div>
+        ) : searchResults.length > 0 ? (
+          <>
+            <ul className="mt-3">
+              {searchResults.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage).map((course) => (
+                <li key={course.id}>
+                  {course.fullname}{' '}
+                  <Form.Select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="d-inline-block w-auto me-2">
+                    <option value={5}>Student</option>
+                    <option value={3}>Teacher</option>
+                  </Form.Select>
+                  <Button
+                    variant="success"
+                    onClick={() => handleEnroll(course.id)}
+                    disabled={enrollLoading}
+                  >
+                    Enroll
+                  </Button>
+                </li>
+              ))}
+            </ul>
+
+            {/* Pagination Controls */}
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <Button
+                variant="outline-primary"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span>Page {currentPage} of {Math.ceil(searchResults.length / resultsPerPage)}</span>
+              <Button
+                variant="outline-primary"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === Math.ceil(searchResults.length / resultsPerPage)}
+              >
+                Next
+              </Button>
+            </div>
+          </>
+        ) : (
+          <p>No courses found</p>
         )}
       </Modal.Body>
       <Modal.Footer>
