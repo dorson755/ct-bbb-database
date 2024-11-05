@@ -70,6 +70,31 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
     }
   };
   
+  const handleUnenroll = async (courseId) => {
+    setEnrollLoading(true);
+    try {
+        const response = await fetch('/api/unenrollStudent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: student.id, courseId }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert('Student successfully unenrolled!');
+            // Refresh the courses list
+            setCourses(courses.filter(course => course.id !== courseId));
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Error unenrolling student:', error);
+        alert('There was an error unenrolling the student');
+    } finally {
+        setEnrollLoading(false);
+    }
+  };
+
 
   return (
     <Modal show onHide={onClose} size="lg">
@@ -92,6 +117,12 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
             {courses.map((course) => (
               <li key={course.id}>
                 {course.fullname}
+                <Button
+                variant="danger"
+                onClick={() => handleUnenroll(course.id)}
+                >
+                Unenroll
+                </Button>
               </li>
             ))}
           </ul>

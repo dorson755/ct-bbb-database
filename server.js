@@ -299,6 +299,23 @@ app.post('/api/enrollStudent', async (req, res) => {
 });
 
 
+// API route to unenroll a student from a course
+app.post('/api/unenrollStudent', async (req, res) => {
+  const { userId, courseId } = req.body;
+
+  try {
+      const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_unenrol_users&moodlewsrestformat=json`;
+      const response = await axios.post(url, {
+          enrolments: [{ userid: userId, courseid: courseId }]
+      });
+      res.status(200).json(response.data);
+  } catch (error) {
+      console.error('Error unenrolling student:', error);
+      res.status(500).json({ error: 'Failed to unenroll student' });
+  }
+});
+
+
 
 
 //The code below is general code for the app to build,
