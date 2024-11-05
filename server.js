@@ -261,7 +261,7 @@ app.get('/api/searchCourses', async (req, res) => {
 // API route to enroll students in courses
 app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
-  const token = 'your_token_here'; // replace with your token
+  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // replace with your token
 
   try {
     const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
