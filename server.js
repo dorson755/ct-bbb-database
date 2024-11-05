@@ -303,12 +303,25 @@ app.post('/api/enrollStudent', async (req, res) => {
 app.post('/api/unenrollStudent', async (req, res) => {
   const { userId, courseId } = req.body;
 
+  const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_unenrol_users&moodlewsrestformat=json`;
+
   try {
-      const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_unenrol_users&moodlewsrestformat=json`;
-      const response = await axios.post(url, {
-          enrolments: [{ userid: userId, courseid: courseId }]
+      const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+              'enrolments[0][userid]': userId,
+              'enrolments[0][courseid]': courseId,
+          }),
       });
-      res.status(200).json(response.data);
+
+      const data = await response.json();
+      if (!response.ok) {
+          throw new Error(data.message || 'Failed to unenroll');
+      }
+      res.status(200).json(data);
   } catch (error) {
       console.error('Error unenrolling student:', error);
       res.status(500).json({ error: 'Failed to unenroll student' });
