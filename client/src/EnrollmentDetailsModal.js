@@ -42,26 +42,25 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
 
   const handleEnroll = async (courseId) => {
     setEnrollLoading(true);
+    console.log(`Attempting to enroll student ${student.id} in course ${courseId} with role ${roleId}`);
+  
     try {
       const response = await fetch('/api/enrollStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: student.id, courseId, roleId: selectedRoleId }), // assuming you have a role selection
+        body: JSON.stringify({ userId: student.id, courseId, roleId }),
       });
   
       const data = await response.json();
+  
       if (response.ok) {
         alert('Student successfully enrolled!');
-        
-        // Find the course from searchResults
-        const enrolledCourse = searchResults.find(course => course.id === courseId);
-        if (enrolledCourse) {
-          // Add the enrolled course to the existing list of courses with its real name
-          setCourses((prevCourses) => [...prevCourses, { id: enrolledCourse.id, fullname: enrolledCourse.fullname }]);
-        }
-  
+        setCourses((prevCourses) => {
+          const enrolledCourse = searchResults.find(course => course.id === courseId);
+          return [...prevCourses, { id: courseId, fullname: enrolledCourse ? enrolledCourse.fullname : 'Unknown Course' }];
+        });        
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.message}`);
       }
     } catch (error) {
       console.error('Error enrolling student:', error);
@@ -70,7 +69,6 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
       setEnrollLoading(false);
     }
   };
-  
   
 
   return (
