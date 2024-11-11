@@ -8,6 +8,9 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [roleId, setRoleId] = useState(5); // Default to Student role
+  const [searchLoading, setSearchLoading] = useState(false);  // For search loading spinner
+  const [currentPage, setCurrentPage] = useState(1);  // Current page for pagination
+  const resultsPerPage = 5;  // Number of results per page
 
   useEffect(() => {
     const fetchStudentCourses = async () => {
