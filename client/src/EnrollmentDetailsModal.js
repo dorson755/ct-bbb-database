@@ -106,7 +106,6 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
       </Modal.Header>
       <Modal.Body>
         <p><strong>Email:</strong> {student.email || 'N/A'}</p>
-        <p><strong>Phone:</strong> {student.phone || 'N/A'}</p>
 
         <h4>Enrolled Courses</h4>
         {loading ? (
