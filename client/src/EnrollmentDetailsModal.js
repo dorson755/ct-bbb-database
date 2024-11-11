@@ -33,6 +33,7 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
   }, [student]);
 
   const handleSearchCourses = async () => {
+    setSearchLoading(true);  // Show the loading spinner before making the API call
     try {
       const response = await fetch(`/api/searchCourses?courseName=${searchQuery}`);
       const data = await response.json();
@@ -40,22 +41,20 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
     } catch (error) {
       console.error('Error searching courses:', error);
       setSearchResults([]);
+    } finally {
+      setSearchLoading(false);  // Hide the loading spinner after the API call is done
     }
   };
 
   const handleEnroll = async (courseId) => {
     setEnrollLoading(true);
-    console.log(`Attempting to enroll student ${student.id} in course ${courseId} with role ${roleId}`);
-  
     try {
       const response = await fetch('/api/enrollStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: student.id, courseId, roleId }),
       });
-  
       const data = await response.json();
-  
       if (response.ok) {
         alert('Student successfully enrolled!');
         setCourses((prevCourses) => {
@@ -72,7 +71,7 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
       setEnrollLoading(false);
     }
   };
-  
+
   const handleUnenroll = async (courseId) => {
     setEnrollLoading(true);
     try {
@@ -81,11 +80,9 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: student.id, courseId }),
         });
-
         const data = await response.json();
         if (response.ok) {
             alert('Student successfully unenrolled!');
-            // Refresh the courses list
             setCourses(courses.filter(course => course.id !== courseId));
         } else {
             alert(`Error: ${data.error}`);
@@ -97,7 +94,6 @@ const EnrollmentDetailsModal = ({ student, onClose }) => {
         setEnrollLoading(false);
     }
   };
-
 
   return (
     <Modal show onHide={onClose} size="lg">
