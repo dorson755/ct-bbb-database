@@ -1,0 +1,36 @@
+openapi: 3.0.0
+info:
+  title: CT BBB Database API
+  version: 1.0.0
+  description: API for managing BBB meetings and Moodle integration
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/
+    description: Production server
+tags:
+  - name: BBB API
+    description: BigBlueButton meeting management
+  - name: Moodle Integration
+    description: Student and course management
+  - name: System
+    description: Server health checks
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Server health check
+      responses:
+        '200':
+          description: Server status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  dbStatus:
+                    type: string
+                  uptime:
+                    type: number
