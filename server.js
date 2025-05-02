@@ -1,348 +1,272 @@
+import 'dotenv/config';
 import express from 'express';
+import NodeCache from 'node-cache';
+import Joi from 'joi';
 import crypto from 'crypto';
 import cors from 'cors';
 import fetch from 'node-fetch';
-import mongoose from 'mongoose'; // Import Mongoose
-import path from 'path'; // Added to serve static files
-import { fileURLToPath } from 'url'; // For ES modules compatibility with __dirname
-//import Course from './models/Course.js'; // Import Course model
+import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs'; // Required for Swagger YAML loading
 
-
-const app = express();
-const PORT = process.env.PORT || 5000; // Use process.env.PORT for Heroku
-
-// Use the directory name (needed for ES modules)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // To parse JSON bodies
+// Swagger setup
+const swaggerDocs = YAML.load(path.join(__dirname, 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// BBB API configuration
-const BBB_URL = process.env.BBB_URL || 'https://bbb.cybertech242-online.com/bigbluebutton/api'; // Use environment variables for security
-const BBB_SECRET = process.env.BBB_SECRET || '6e5qNuCuwbboDlxnEqHNn74XdCil07gDuAqDNLp9y4'; // Use environment variables for security
-const MOODLE_TOKEN = process.env.MOODLE_TOKEN || '11d9797670d74f22f8e4aa8483fab962';
-const MOODLE_URL = process.env.MOODLE_URL || 'https://www.cybertech242-online.com';
+// Security middleware
+app.use(helmet());
+app.use(compression());
+app.use(morgan('combined'));
 
-// MongoDB connection URI
-const mongoURI = process.env.MONGO_URI || 'mongodb+srv://dwi3209:Ngc4414flux!@ct-dashboard-schedule.2a9ts.mongodb.net/?retryWrites=true&w=majority&appName=ct-dashboard-schedule';
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-// Connect to MongoDB using Mongoose
-mongoose.connect(mongoURI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch((error) => console.error('MongoDB connection error:', error));
+// CORS configuration
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-// Function to generate SHA-1 checksum
-const generateChecksum = (apiCall, params) => {
-  const queryString = new URLSearchParams(params).toString();
-  const stringToHash = `${apiCall}${queryString}${BBB_SECRET}`;
-  return crypto.createHash('sha1').update(stringToHash).digest('hex');
+// MongoDB connection
+const mongoOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  ssl: true,
+  authSource: 'admin'
 };
 
-// API route to get recordings
-app.get('/api/getRecordings', async (req, res) => {
-  const { meetingID } = req.query;
-  const apiCall = 'getRecordings';
-  const params = {};
+// Updated MongoDB connection (remove deprecated options)
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000, // 5 second timeout
+})
+.then(() => console.log('MongoDB connected'))
+.catch(error => console.error('MongoDB connection error:', error));
 
-  if (meetingID) {
-    params['meetingID'] = meetingID;
-  }
+// Cache setup
+const moodleCache = new NodeCache({ stdTTL: 300 });
 
-  const checksum = generateChecksum(apiCall, params);
+// BBB Utilities
+const generateChecksum = (apiCall, params) => {
   const queryString = new URLSearchParams(params).toString();
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
+  return crypto.createHash('sha1')
+    .update(`${apiCall}${queryString}${process.env.BBB_SECRET}`)
+    .digest('hex');
+};
 
-  console.log('Constructed BBB API URL:', bbbApiUrl);
+// Validation Schemas
+const studentSearchSchema = Joi.object({
+  email: Joi.string().email().optional(),
+  fullName: Joi.string().min(3).optional()
+}).or('email', 'fullName');
 
+const enrollmentSchema = Joi.object({
+  userId: Joi.number().required(),
+  courseId: Joi.number().required(),
+  roleId: Joi.number().required()
+});
+
+// Error Handling Middleware
+const errorHandler = (err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+};
+
+// API Endpoints
+/**
+ * @swagger
+ * /api/getRecordings:
+ *   get:
+ *     tags: [BBB API]
+ *     summary: Get BBB recordings
+ *     parameters:
+ *       - in: query
+ *         name: meetingID
+ *         schema:
+ *           type: string
+ *         description: BBB meeting ID
+ *     responses:
+ *       200:
+ *         description: Recordings data
+ *       500:
+ *         description: BBB API error
+ */
+app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
   try {
-    const response = await fetch(bbbApiUrl);
-    const data = await response.text();
-    res.send(data);
+    const { meetingID } = req.query;
+    const params = meetingID ? { meetingID } : {};
+    const checksum = generateChecksum('getRecordings', params);
+    
+    const bbbUrl = new URL(`${process.env.BBB_URL}/getRecordings`);
+    Object.entries(params).forEach(([key, val]) => bbbUrl.searchParams.set(key, val));
+    bbbUrl.searchParams.set('checksum', checksum);
+
+    const response = await fetch(bbbUrl);
+    if (!response.ok) throw new Error(`BBB API Error: ${response.statusText}`);
+    
+    res.set('Content-Type', 'application/xml');
+    res.send(await response.text());
   } catch (error) {
-    console.error('Error fetching recordings from BBB API:', error);
-    res.status(500).send('Error fetching recordings from BBB API');
+    next(error);
   }
 });
 
-// API route to get meetings
-app.get('/api/getMeetings', async (req, res) => {
-  const apiCall = 'getMeetings';
-  const params = {};
-  const checksum = generateChecksum(apiCall, params);
-
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?checksum=${checksum}`;
-  console.log('Constructed BBB API URL for getMeetings:', bbbApiUrl);
-
+/**
+ * @swagger
+ * /api/searchStudents:
+ *   get:
+ *     tags: [Moodle Integration]
+ *     summary: Search Moodle students
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: fullName
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of matching students
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: 123
+ *                 fullname: "John Doe"
+ *                 email: "john@example.com"
+ *       400:
+ *         description: Invalid parameters
+ */
+app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   try {
-    const response = await fetch(bbbApiUrl);
-    const data = await response.text();
-    res.send(data);
-  } catch (error) {
-    console.error('Error fetching meetings from BBB API:', error);
-    res.status(500).send('Error fetching meetings from BBB API');
-  }
-});
+    const { error } = studentSearchSchema.validate(req.query);
+    if (error) return res.status(400).json({ error: error.details[0].message });
 
-// API route to join a meeting
-app.get('/api/joinMeeting', async (req, res) => {
-  const { fullName, meetingID, role } = req.query;
+    const cacheKey = `students:${JSON.stringify(req.query)}`;
+    const cached = moodleCache.get(cacheKey);
+    if (cached) return res.json(cached);
 
-  if (!fullName || !meetingID || !role) {
-    return res.status(400).send('Missing required parameters: fullName, meetingID, or role');
-  }
+    const url = new URL(`${process.env.MOODLE_URL}/webservice/rest/server.php`);
+    url.searchParams.append('wstoken', process.env.MOODLE_TOKEN);
+    url.searchParams.append('wsfunction', 'core_user_get_users');
+    url.searchParams.append('moodlewsrestformat', 'json');
 
-  const apiCall = 'join';
-  const params = {
-    fullName,
-    meetingID,
-    role,
-    excludeFromDashboard: 'true',
-    redirect: 'true'
-  };
-
-  const checksum = generateChecksum(apiCall, params);
-  const queryString = new URLSearchParams(params).toString();
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
-
-  console.log('Constructed BBB Join API URL:', bbbApiUrl);
-
-  try {
-    res.send({ url: bbbApiUrl });
-  } catch (error) {
-    console.error('Error generating join URL for BBB:', error);
-    res.status(500).send('Error generating join URL');
-  }
-});
-
-// API route to delete recordings
-app.get('/api/deleteRecordings', async (req, res) => {
-  const { recordID } = req.query;
-
-  if (!recordID) {
-    return res.status(400).send('Missing recordID parameter');
-  }
-
-  const apiCall = 'deleteRecordings';
-  const params = { recordID };
-  const checksum = generateChecksum(apiCall, params);
-  const queryString = new URLSearchParams(params).toString();
-  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
-
-  console.log('Constructed BBB Delete API URL:', bbbApiUrl);
-
-  try {
-    const response = await fetch(bbbApiUrl);
-    if (response.ok) {
-      res.send('Recordings deleted successfully');
+    if (req.query.email) {
+      url.searchParams.append('criteria[0][key]', 'email');
+      url.searchParams.append('criteria[0][value]', req.query.email);
     } else {
-      res.status(response.status).send('Error deleting recordings');
+      url.searchParams.append('criteria[0][key]', 'fullname');
+      url.searchParams.append('criteria[0][value]', req.query.fullName);
     }
-  } catch (error) {
-    console.error('Error deleting recordings from BBB API:', error);
-    res.status(500).send('Error deleting recordings from BBB API');
-  }
-});
 
-
-//The code below refer to Moodle features
-
-
-// API route to search students
-app.get('/api/searchStudents', async (req, res) => {
-  const { email, fullName } = req.query;
-
-  if (!email && !fullName) {
-    return res.status(400).json({ error: 'At least one search parameter is required' });
-  }
-
-  const token = '11d9797670d74f22f8e4aa8483fab962'; // Replace with your actual token
-
-  let url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=core_user_get_users&moodlewsrestformat=json`;
-  
-  if (email) {
-    url += `&criteria[0][key]=email&criteria[0][value]=${encodeURIComponent(email)}`;
-  } else if (fullName) {
-    url += `&criteria[0][key]=fullname&criteria[0][value]=${encodeURIComponent(fullName)}`;
-  }
-
-  try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`Moodle API Error: ${response.statusText}`);
+    
     const data = await response.json();
-
-    if (data.users && data.users.length > 0) {
-      res.status(200).json(data.users);
-    } else {
-      res.status(404).json({ message: 'No users found' });
-    }
+    moodleCache.set(cacheKey, data);
+    res.json(data);
   } catch (error) {
-    console.error('Error fetching student data:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-
-// Route to get courses for a specific student by user ID
-app.get('/api/getStudentCourses', async (req, res) => {
-  const { userId } = req.query; // Get the userId from the query parameters
-
-  // If userId is not provided, return an error
-  if (!userId) {
-    return res.status(400).json({ error: 'Missing userId parameter' });
-  }
-
+/**
+ * @swagger
+ * /api/enrollStudent:
+ *   post:
+ *     tags: [Moodle Integration]
+ *     summary: Enroll student in course
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *               courseId:
+ *                 type: integer
+ *               roleId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Enrollment successful
+ *       400:
+ *         description: Invalid input
+ */
+app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
   try {
-    // Construct the Moodle API URL
-    const moodleUrl = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=core_enrol_get_users_courses&moodlewsrestformat=json&userid=${userId}`;
+    const { error } = enrollmentSchema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
 
-    // Fetch the data from Moodle
-    const response = await fetch(moodleUrl);
-    const courses = await response.json();
+    const url = new URL(`${process.env.MOODLE_URL}/webservice/rest/server.php`);
+    url.searchParams.append('wstoken', process.env.MOODLE_TOKEN);
+    url.searchParams.append('wsfunction', 'enrol_manual_enrol_users');
+    url.searchParams.append('moodlewsrestformat', 'json');
 
-    // Check if the response is valid JSON or if it contains an error
-    if (response.ok) {
-      // Return the courses to the frontend
-      res.json(courses);
-    } else {
-      throw new Error('Failed to fetch courses from Moodle');
-    }
-  } catch (error) {
-    console.error('Error fetching student courses:', error);
-    res.status(500).json({ error: 'An error occurred while fetching student courses' });
-  }
-});
-
-
-// Search courses by course name
-app.get('/api/searchCourses', async (req, res) => {
-  const { courseName } = req.query;
-
-  if (!courseName) {
-    return res.status(400).json({ error: 'Course name is required' });
-  }
-
-  try {
-    // Construct the URL for the Moodle API request
-    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=core_course_get_courses&moodlewsrestformat=json`;
-
-    // Debug log: Show the generated URL in the server logs
-    console.log('Generated Moodle API URL:', url);
-
-    // Fetch all courses from Moodle
-    const response = await fetch(url);
-    const data = await response.json();
-
-    // Debug log: Show the fetched data or error in the logs
-    console.log('Response from Moodle API:', data);
-
-    if (!Array.isArray(data)) {
-      console.error('Unexpected API response:', data);
-      return res.status(500).json({ error: 'Invalid response from Moodle' });
-    }
-
-    // Filter courses based on the search query
-    const filteredCourses = data.filter((course) =>
-      course.fullname.toLowerCase().includes(courseName.toLowerCase())
-    );
-
-    // Debug log: Show the filtered courses
-    console.log('Filtered Courses:', filteredCourses);
-
-    // Send back the filtered courses
-    res.json(filteredCourses);
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-    res.status(500).json({ error: 'Failed to retrieve courses' });
-  }
-});
-
-
-// API route to enroll students in courses
-app.post('/api/enrollStudent', async (req, res) => {
-  const { userId, courseId, roleId } = req.body;
-  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Replace with your token
-
-  try {
-    // Construct the URL
-    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
-
-    // Construct the body of the POST request
     const body = new URLSearchParams({
-      'enrolments[0][roleid]': roleId,
-      'enrolments[0][userid]': userId,
-      'enrolments[0][courseid]': courseId
-    }).toString();
+      'enrolments[0][roleid]': req.body.roleId,
+      'enrolments[0][userid]': req.body.userId,
+      'enrolments[0][courseid]': req.body.courseId
+    });
 
-    // Log the URL and body for debugging purposes
-    console.log('Moodle Enrollment URL:', url);
-    console.log('Request Body:', body);
-
-    // Make the request to Moodle
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body
     });
 
-    const data = await response.json();
-
-    if (response.ok) {
-      res.json({ success: true, message: 'Enrollment successful', data });
-    } else {
-      res.status(400).json({ success: false, message: data.message });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Enrollment failed');
     }
+
+    res.json({ success: true, message: 'Enrollment successful' });
   } catch (error) {
-    console.error('Error enrolling student:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    next(error);
   }
 });
 
+// Static files and error handling
+app.use(express.static(path.join(__dirname, 'client/build'), {
+  maxAge: '1y',
+  immutable: true
+}));
 
-// API route to unenroll a student from a course
-app.post('/api/unenrollStudent', async (req, res) => {
-  const { userId, courseId } = req.body;
+app.use(errorHandler);
 
-  const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_unenrol_users&moodlewsrestformat=json`;
-
-  try {
-      const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-              'enrolments[0][userid]': userId,
-              'enrolments[0][courseid]': courseId,
-          }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-          throw new Error(data.message || 'Failed to unenroll');
-      }
-      res.status(200).json(data);
-  } catch (error) {
-      console.error('Error unenrolling student:', error);
-      res.status(500).json({ error: 'Failed to unenroll student' });
-  }
-});
-
-
-
-
-//The code below is general code for the app to build,
-//and to assist with front and back end communication.
-
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'client/build')));
-
-// Catch-all route to serve React frontend for any unhandled routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-// Start the server
+// Server startup
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`API Docs available at http://localhost:${PORT}/api-docs`);
+}).on('error', error => {
+  console.error('Server startup failed:', error);
+  process.exit(1);
 });
