@@ -53,6 +53,7 @@ const mongoOptions = {
   ssl: true,
   authSource: 'admin'
 };
+console.log('MONGO_URI:', process.env.MONGO_URI); // Should show your URI
 
 // Updated MongoDB connection (remove deprecated options)
 mongoose.connect(process.env.MONGO_URI, {
