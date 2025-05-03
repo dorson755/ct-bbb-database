@@ -13,7 +13,10 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs'; // Required for Swagger YAML loading
+import YAML from 'yamljs';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import User from './models/User.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +31,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
+app.use(express.json());
 
 // Rate limiting
 const apiLimiter = rateLimit({
@@ -40,30 +44,62 @@ const apiLimiter = rateLimit({
 // CORS configuration
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// MongoDB connection
-const mongoOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  maxPoolSize: 10,
-  minPoolSize: 2,
-  ssl: true,
-  authSource: 'admin'
-};
-console.log('MONGO_URI:', process.env.MONGO_URI); // Should show your URI
+// Database connection
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10
+    });
+    console.log('MongoDB connected');
 
-// Updated MongoDB connection (remove deprecated options)
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 5000, // 5 second timeout
-})
-.then(() => console.log('MongoDB connected'))
-.catch(error => console.error('MongoDB connection error:', error));
+    // Create initial admin if none exists
+    const adminExists = await User.exists({ username: 'admin' });
+    if (!adminExists) {
+      await User.create({
+        username: 'admin',
+        password: await bcrypt.hash(
+          process.env.ADMIN_INITIAL_PASSWORD || 'admin123', 
+          10
+        ),
+        role: 'admin'
+      });
+      console.log('Default admin user created');
+    }
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  }
+};
+connectDB();
 
 // Cache setup
 const moodleCache = new NodeCache({ stdTTL: 300 });
+
+// Authentication middleware
+const authenticate = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.userId).select('-password');
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+const isAdmin = (req, res, next) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  next();
+};
 
 // BBB Utilities
 const generateChecksum = (apiCall, params) => {
@@ -85,34 +121,54 @@ const enrollmentSchema = Joi.object({
   roleId: Joi.number().required()
 });
 
-// Error Handling Middleware
-const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-};
+// ====================== API Endpoints ====================== //
 
-// API Endpoints
-/**
- * @swagger
- * /api/getRecordings:
- *   get:
- *     tags: [BBB API]
- *     summary: Get BBB recordings
- *     parameters:
- *       - in: query
- *         name: meetingID
- *         schema:
- *           type: string
- *         description: BBB meeting ID
- *     responses:
- *       200:
- *         description: Recordings data
- *       500:
- *         description: BBB API error
- */
+// Authentication routes
+app.post('/api/auth/login', apiLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token, role: user.role });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/auth/me', authenticate, (req, res) => {
+  res.json(req.user);
+});
+
+// Admin routes
+app.get('/api/users', authenticate, isAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/users/:id', authenticate, isAdmin, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Existing BBB endpoints
 app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
   try {
     const { meetingID } = req.query;
@@ -133,33 +189,7 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/searchStudents:
- *   get:
- *     tags: [Moodle Integration]
- *     summary: Search Moodle students
- *     parameters:
- *       - in: query
- *         name: email
- *         schema:
- *           type: string
- *       - in: query
- *         name: fullName
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of matching students
- *         content:
- *           application/json:
- *             example:
- *               - id: 123
- *                 fullname: "John Doe"
- *                 email: "john@example.com"
- *       400:
- *         description: Invalid parameters
- */
+// Existing Moodle endpoints
 app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   try {
     const { error } = studentSearchSchema.validate(req.query);
@@ -193,31 +223,6 @@ app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/enrollStudent:
- *   post:
- *     tags: [Moodle Integration]
- *     summary: Enroll student in course
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: integer
- *               courseId:
- *                 type: integer
- *               roleId:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Enrollment successful
- *       400:
- *         description: Invalid input
- */
 app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
   try {
     const { error } = enrollmentSchema.validate(req.body);
@@ -251,57 +256,7 @@ app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
   }
 });
 
-
-/**
- * @swagger
- * tags:
- *   - name: System
- *     description: Server monitoring endpoints
- */
-
-/**
- * @swagger
- * /api/health:
- *   get:
- *     tags: [System]
- *     summary: Server health status
- *     description: Returns current server status and database connectivity
- *     responses:
- *       200:
- *         description: Server is healthy
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: UP
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *                 nodeVersion:
- *                   type: string
- *                   example: v18.12.1
- *                 dbStatus:
- *                   type: string
- *                   example: connected
- *                 uptime:
- *                   type: number
- *                   format: float
- *                   example: 123.45
- *                 memoryUsage:
- *                   type: object
- *                   properties:
- *                     rss:
- *                       type: integer
- *                     heapTotal:
- *                       type: integer
- *                     heapUsed:
- *                       type: integer
- *                     external:
- *                       type: integer
- */
+// Health endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'UP',
@@ -313,14 +268,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Static files and error handling
+// Static files with API exclusion
 app.use(express.static(path.join(__dirname, 'client/build'), {
   maxAge: '1y',
-  immutable: true
-}));
+  immutable: true,
+  filter: (req) => !req.path.startsWith('/api')
+});
 
-app.use(errorHandler);
+// Error handling
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
+// Client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
