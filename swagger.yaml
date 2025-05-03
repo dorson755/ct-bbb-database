@@ -1,11 +1,22 @@
 openapi: 3.0.0
 info:
-  title: CT BBB Dashboard API
+  title: CT Moodle/BBB Dashboard API
   version: 1.0.0
-  description: API for BBB and Moodle integration
+  description: |
+    API for managing BigBlueButton meetings and Moodle integrations
+    - BBB API endpoints require valid checksum
+    - Moodle endpoints require valid token
 servers:
   - url: https://ct-bbb-dashboard-256f58650ed0.herokuapp.com
     description: Production server
+
+tags:
+  - name: BBB API
+    description: BigBlueButton meeting operations
+  - name: Moodle Integration
+    description: Student and course management
+  - name: System
+    description: Server monitoring
 
 paths:
   /api/health:
@@ -14,7 +25,7 @@ paths:
       summary: Server health check
       responses:
         200:
-          description: OK
+          description: Server status
           content:
             application/json:
               schema:
@@ -22,29 +33,80 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: UP
                   dbStatus:
                     type: string
+                    example: connected
                   uptime:
                     type: number
+                    example: 1234.56
 
   /api/getRecordings:
     get:
       tags: [BBB API]
-      summary: Get BigBlueButton recordings
+      summary: Get BBB recordings
       parameters:
         - in: query
           name: meetingID
           schema:
             type: string
+          description: BBB meeting ID filter
       responses:
         200:
-          description: Recordings list
+          description: XML recordings data
           content:
             application/xml:
               schema:
                 type: string
+                example: |
+                  <response>...</response>
         500:
           description: BBB API error
+
+  /api/getMeetings:
+    get:
+      tags: [BBB API]
+      summary: Get active BBB meetings
+      responses:
+        200:
+          description: XML meetings data
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /api/joinMeeting:
+    get:
+      tags: [BBB API]
+      summary: Generate BBB join URL
+      parameters:
+        - in: query
+          name: fullName
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: meetingID
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: role
+          required: true
+          schema:
+            type: string
+            enum: [MODERATOR, VIEWER]
+      responses:
+        200:
+          description: Join URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: https://bbb-server.com/join?session=abc123
 
   /api/searchStudents:
     get:
@@ -75,3 +137,74 @@ paths:
                       type: string
                     email:
                       type: string
+
+  /api/getStudentCourses:
+    get:
+      tags: [Moodle Integration]
+      summary: Get courses for a student
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Course list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    fullname:
+                      type: string
+
+  /api/enrollStudent:
+    post:
+      tags: [Moodle Integration]
+      summary: Enroll student in course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, courseId, roleId]
+              properties:
+                userId:
+                  type: integer
+                courseId:
+                  type: integer
+                roleId:
+                  type: integer
+      responses:
+        200:
+          description: Enrollment success
+        400:
+          description: Invalid enrollment data
+
+  /api/unenrollStudent:
+    post:
+      tags: [Moodle Integration]
+      summary: Unenroll student from course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, courseId]
+              properties:
+                userId:
+                  type: integer
+                courseId:
+                  type: integer
+      responses:
+        200:
+          description: Unenrollment success
+        404:
+          description: Enrollment not found

@@ -250,6 +250,68 @@ app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
   }
 });
 
+
+/**
+ * @swagger
+ * tags:
+ *   - name: System
+ *     description: Server monitoring endpoints
+ */
+
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     tags: [System]
+ *     summary: Server health status
+ *     description: Returns current server status and database connectivity
+ *     responses:
+ *       200:
+ *         description: Server is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: UP
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 nodeVersion:
+ *                   type: string
+ *                   example: v18.12.1
+ *                 dbStatus:
+ *                   type: string
+ *                   example: connected
+ *                 uptime:
+ *                   type: number
+ *                   format: float
+ *                   example: 123.45
+ *                 memoryUsage:
+ *                   type: object
+ *                   properties:
+ *                     rss:
+ *                       type: integer
+ *                     heapTotal:
+ *                       type: integer
+ *                     heapUsed:
+ *                       type: integer
+ *                     external:
+ *                       type: integer
+ */
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'UP',
+    timestamp: new Date().toISOString(),
+    nodeVersion: process.version,
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    uptime: process.uptime(),
+    memoryUsage: process.memoryUsage()
+  });
+});
+
 // Static files and error handling
 app.use(express.static(path.join(__dirname, 'client/build'), {
   maxAge: '1y',
