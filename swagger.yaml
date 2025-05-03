@@ -1,28 +1,20 @@
 openapi: 3.0.0
 info:
-  title: CT BBB Database API
+  title: CT BBB Dashboard API
   version: 1.0.0
-  description: API for managing BBB meetings and Moodle integration
+  description: API for BBB and Moodle integration
 servers:
-  - url: http://localhost:5000
-    description: Development server
-  - url: https://ct-bbb-dashboard-256f58650ed0.herokuapp.com/
+  - url: https://ct-bbb-dashboard-256f58650ed0.herokuapp.com
     description: Production server
-tags:
-  - name: BBB API
-    description: BigBlueButton meeting management
-  - name: Moodle Integration
-    description: Student and course management
-  - name: System
-    description: Server health checks
+
 paths:
-  /health:
+  /api/health:
     get:
       tags: [System]
       summary: Server health check
       responses:
-        '200':
-          description: Server status information
+        200:
+          description: OK
           content:
             application/json:
               schema:
@@ -34,3 +26,52 @@ paths:
                     type: string
                   uptime:
                     type: number
+
+  /api/getRecordings:
+    get:
+      tags: [BBB API]
+      summary: Get BigBlueButton recordings
+      parameters:
+        - in: query
+          name: meetingID
+          schema:
+            type: string
+      responses:
+        200:
+          description: Recordings list
+          content:
+            application/xml:
+              schema:
+                type: string
+        500:
+          description: BBB API error
+
+  /api/searchStudents:
+    get:
+      tags: [Moodle Integration]
+      summary: Search Moodle students
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+        - in: query
+          name: fullName
+          schema:
+            type: string
+      responses:
+        200:
+          description: Student list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    fullname:
+                      type: string
+                    email:
+                      type: string
