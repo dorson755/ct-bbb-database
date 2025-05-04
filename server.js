@@ -61,10 +61,7 @@ const connectDB = async () => {
     if (!adminExists) {
       await User.create({
         username: 'admin',
-        password: await bcrypt.hash(
-          process.env.ADMIN_INITIAL_PASSWORD, 
-          10
-        ),
+        password: process.env.ADMIN_INITIAL_PASSWORD,
         role: 'admin'
       });
       console.log('Default admin user created');
