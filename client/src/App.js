@@ -51,6 +51,47 @@ const App = () => {
               <Route path="/" element={
                 <ProtectedRoute>
                   {/* Home content */}
+                  <>
+                  <h1>Homepage</h1>
+                  <div className="card-container">
+                    <Link to="/live-classes">
+                      <div className="card">
+                        <h3>Live Classes</h3>
+                        <img src='/assets/live.gif' alt="Live Classes" className="card-img" />
+                      </div>
+                    </Link>
+                    <Link to="/recordings">
+                      <div className="card">
+                        <h3>Recordings</h3>
+                        <img src='/assets/records.gif' alt="Recordings" className="card-img" />
+                      </div>
+                    </Link>
+                    <Link to="/schedule">
+                      <div className="card">
+                        <h3>Schedule</h3>
+                        <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
+                      </div>
+                    </Link>
+                    <Link to="/student-manager">
+                      <div className="card">
+                        <h3>Student Manager</h3>
+                        <img src='/assets/search.gif' alt="Student Manager" className="card-img" />
+                      </div>
+                    </Link>
+                    <Link to="/enrollments">
+                      <div className="card">
+                        <h3>Enrollments</h3>
+                        <img src='/assets/enrollments.gif' alt="Enrollments" className="card-img" />
+                      </div>
+                    </Link>
+                    <a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
+                      <div className="card">
+                        <h3>Site</h3>
+                        <img src='/assets/site.gif' alt="Main Site" className="card-img" />
+                      </div>
+                    </a>
+                  </div>
+                  </>
                 </ProtectedRoute>
               } />
 

@@ -58,6 +58,8 @@ const connectDB = async () => {
     console.log('MongoDB connected');
 
     const adminExists = await User.exists({ username: 'admin' });
+    console.log('Seeding admin with password:', process.env.ADMIN_INITIAL_PASSWORD);
+
     if (!adminExists) {
       await User.create({
         username: 'admin',
