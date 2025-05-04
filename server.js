@@ -340,12 +340,11 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
  */
 app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   try {
-    // 1) Validate input
+    // 1) Validate
     const { error } = studentSearchSchema.validate(req.query);
-    if (error) 
-      return res.status(400).json({ error: error.details[0].message });
+    if (error) return res.status(400).json({ error: error.details[0].message });
 
-    // 2) Build the Moodle URL exactly as you had before
+    // 2) Build URL (old string‐concat style you know works)
     const base = process.env.MOODLE_URL.replace(/\/+$/, '');
     const token = process.env.MOODLE_TOKEN;
     const fn    = 'core_user_get_users';
@@ -361,16 +360,37 @@ app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
       `&criteria[0][key]=${key}` +
       `&criteria[0][value]=${val}`;
 
-    console.log('[searchStudents] fetching', moodleUrl);
+    console.log('[searchStudents] fetching →', moodleUrl);
 
-    // 3) Fetch, parse, cache, return
+    // 3) Fetch as text
     const response = await fetch(moodleUrl);
+    const text = await response.text();
+    console.log('[searchStudents] status =', response.status);
+    console.log('[searchStudents] body snippet =', text.slice(0, 200).replace(/\s+/g, ' '), '…');
+
+    // 4) If Moodle errored, return its payload
     if (!response.ok) {
-      const text = await response.text();
-      return res.status(502).json({ error: 'Moodle API Error', details: text });
+      return res
+        .status(502)
+        .json({ error: 'Moodle API Error', details: text });
     }
-    const data = await response.json();
-    moodleCache.set(`students:${JSON.stringify(req.query)}`, data);
+
+    // 5) Try parsing JSON—if it’s not valid JSON, catch below
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('[searchStudents] JSON.parse failed:', parseErr);
+      console.error('[searchStudents] raw body:', text.slice(0, 500));
+      return res.status(502).json({
+        error: 'Invalid JSON from Moodle',
+        raw: text.slice(0, 200)
+      });
+    }
+
+    // 6) Cache and respond
+    const cacheKey = `students:${JSON.stringify(req.query)}`;
+    moodleCache.set(cacheKey, data);
     res.json(data);
 
   } catch (err) {
@@ -378,6 +398,7 @@ app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
     next(err);
   }
 });
+
 
 
 /**
