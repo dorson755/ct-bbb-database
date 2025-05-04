@@ -271,10 +271,10 @@ app.get('/api/health', (req, res) => {
 // Static files with API exclusion
 app.use(express.static(path.join(__dirname, 'client/build'), {
   maxAge: '1y',
-  setHeaders: (res, path) => {
-    res.set('Cache-Control', 'public, max-age=31536000, immutable');
-  }
-}));
+  immutable: true,
+  filter: (req) => !req.path.startsWith('/api')
+});
+
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
