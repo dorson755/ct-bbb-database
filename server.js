@@ -340,36 +340,45 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
  */
 app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   try {
+    // 1) Validate input
     const { error } = studentSearchSchema.validate(req.query);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    if (error) 
+      return res.status(400).json({ error: error.details[0].message });
 
-    const cacheKey = `students:${JSON.stringify(req.query)}`;
-    const cached = moodleCache.get(cacheKey);
-    if (cached) return res.json(cached);
+    // 2) Build the Moodle URL exactly as you had before
+    const base = process.env.MOODLE_URL.replace(/\/+$/, '');
+    const token = process.env.MOODLE_TOKEN;
+    const fn    = 'core_user_get_users';
+    const fmt   = 'json';
+    const key   = req.query.email ? 'email' : 'fullname';
+    const val   = encodeURIComponent(req.query.email || req.query.fullName);
 
-    const url = new URL(`${process.env.MOODLE_URL}/webservice/rest/server.php`);
-    url.searchParams.append('wstoken', process.env.MOODLE_TOKEN);
-    url.searchParams.append('wsfunction', 'core_user_get_users');
-    url.searchParams.append('moodlewsrestformat', 'json');
+    const moodleUrl =
+      `${base}/webservice/rest/server.php` +
+      `?wstoken=${token}` +
+      `&wsfunction=${fn}` +
+      `&moodlewsrestformat=${fmt}` +
+      `&criteria[0][key]=${key}` +
+      `&criteria[0][value]=${val}`;
 
-    if (req.query.email) {
-      url.searchParams.append('criteria[0][key]', 'email');
-      url.searchParams.append('criteria[0][value]', req.query.email);
-    } else {
-      url.searchParams.append('criteria[0][key]', 'fullname');
-      url.searchParams.append('criteria[0][value]', req.query.fullName);
+    console.log('[searchStudents] fetching', moodleUrl);
+
+    // 3) Fetch, parse, cache, return
+    const response = await fetch(moodleUrl);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ error: 'Moodle API Error', details: text });
     }
-
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Moodle API Error: ${response.statusText}`);
-    
     const data = await response.json();
-    moodleCache.set(cacheKey, data);
+    moodleCache.set(`students:${JSON.stringify(req.query)}`, data);
     res.json(data);
-  } catch (error) {
-    next(error);
+
+  } catch (err) {
+    console.error('[searchStudents] unexpected error:', err);
+    next(err);
   }
 });
+
 
 /**
  * @swagger
