@@ -9,6 +9,7 @@ import SchedulePage from './SchedulePage'; // Import Schedule Page component
 import StudentManager from './StudentManager';
 import Enrollments from './Enrollments';
 import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
+import Admin from './Admin'
 
 const App = () => {
   return (
@@ -92,6 +93,14 @@ const App = () => {
 
               {/* Enrollments Page Route */}
               <Route path="/enrollments" element={<Enrollments />} />
+              
+              {/* Login Route */}
+              <Route path="/login" element={<Login />} />
+              
+              {/* Admin Route */}
+              <Route path="/admin" element={
+              localStorage.getItem('token') ? <Admin /> : <Navigate to="/login" />
+              } />
             </Routes>
           </div>
         </div>
