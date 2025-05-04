@@ -14,14 +14,9 @@ import Login from './Login';
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const token = localStorage.getItem('token');
   const userRole = token ? JSON.parse(atob(token.split('.')[1]))?.role : null;
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
 
-  if (requireAdmin && userRole !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-
+  if (!token) return <Navigate to="/login" replace />;
+  if (requireAdmin && userRole !== 'admin') return <Navigate to="/" replace />;
   return children;
 };
 
@@ -35,7 +30,6 @@ const App = () => {
     <Router>
       <NotificationProvider>
         <div className="app-container">
-          {/* Sidebar */}
           <div className="sidebar">
             <ul>
               <li><Link to="/"><img src='/assets/home.png' alt="Home" className="sidebar-logo" /></Link></li>
@@ -50,89 +44,23 @@ const App = () => {
             </ul>
           </div>
 
-          {/* Main Content */}
           <div className="main-content">
             <Routes>
-              {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               
-              {/* Protected Home Route */}
               <Route path="/" element={
                 <ProtectedRoute>
-                  <div className="home-container">
-                    <h1>Homepage</h1>
-                    <div className="card-container">
-                      <Link to="/live-classes">
-                        <div className="card">
-                          <h3>Live Classes</h3>
-                          <img src='/assets/live.gif' alt="Live Classes" className="card-img" />
-                        </div>
-                      </Link>
-                      <Link to="/recordings">
-                        <div className="card">
-                          <h3>Recordings</h3>
-                          <img src='/assets/records.gif' alt="Recordings" className="card-img" />
-                        </div>
-                      </Link>
-                      <Link to="/schedule">
-                        <div className="card">
-                          <h3>Schedule</h3>
-                          <img src='/assets/schedule.gif' alt="Schedule" className="card-img" />
-                        </div>
-                      </Link>
-                      <Link to="/student-manager">
-                        <div className="card">
-                          <h3>Student Manager</h3>
-                          <img src='/assets/search.gif' alt="Student Manager" className="card-img" />
-                        </div>
-                      </Link>
-                      <Link to="/enrollments">
-                        <div className="card">
-                          <h3>Enrollments</h3>
-                          <img src='/assets/enrollments.gif' alt="Enrollments" className="card-img" />
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
+                  {/* Home content */}
                 </ProtectedRoute>
               } />
 
-              {/* Protected Routes */}
-              <Route path="/live-classes" element={
-                <ProtectedRoute>
-                  <LiveClasses />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/recordings" element={
-                <ProtectedRoute>
-                  <RecordingsPage />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/schedule" element={
-                <ProtectedRoute>
-                  <SchedulePage />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/student-manager" element={
-                <ProtectedRoute>
-                  <StudentManager />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/enrollments" element={
-                <ProtectedRoute>
-                  <Enrollments />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin>
-                  <Admin />
-                </ProtectedRoute>
-              } />
+              {/* Protected routes */}
+              <Route path="/live-classes" element={<ProtectedRoute><LiveClasses /></ProtectedRoute>} />
+              <Route path="/recordings" element={<ProtectedRoute><RecordingsPage /></ProtectedRoute>} />
+              <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
+              <Route path="/student-manager" element={<ProtectedRoute><StudentManager /></ProtectedRoute>} />
+              <Route path="/enrollments" element={<ProtectedRoute><Enrollments /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             </Routes>
           </div>
         </div>
