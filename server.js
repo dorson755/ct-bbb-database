@@ -62,7 +62,7 @@ const connectDB = async () => {
       await User.create({
         username: 'admin',
         password: await bcrypt.hash(
-          process.env.ADMIN_INITIAL_PASSWORD || 'admin123', 
+          process.env.ADMIN_INITIAL_PASSWORD, 
           10
         ),
         role: 'admin'
