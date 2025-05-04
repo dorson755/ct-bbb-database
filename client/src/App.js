@@ -1,16 +1,32 @@
-// src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import './App.css'; // Import custom styles
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
+import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import LiveClasses from './LiveClasses'; // Import Live Classes component
-import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
-import SchedulePage from './SchedulePage'; // Import Schedule Page component
+import LiveClasses from './LiveClasses';
+import RecordingsPage from './RecordingsPage';
+import SchedulePage from './SchedulePage';
 import StudentManager from './StudentManager';
 import Enrollments from './Enrollments';
-import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
-import Admin from './Admin'
-import Login from './Login'
+import { NotificationProvider } from './NotificationContext';
+import Admin from './Admin';
+import Login from './Login';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const userRole = token ? JSON.parse(atob(token.split('.')[1])?.role : null;
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Add role-based protection if needed
+  if (children.type.name === 'Admin' && userRole !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 const App = () => {
   return (
@@ -35,6 +51,9 @@ const App = () => {
           {/* Main Content with Routes */}
           <div className="main-content">
             <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              
               {/* Home Route */}
               <Route path="/" element={
                 <>
@@ -80,27 +99,41 @@ const App = () => {
                 </>
               } />
 
-              {/* Live Classes Route */}
-              <Route path="/live-classes" element={<LiveClasses />} />
-
-              {/* Recordings Page Route */}
-              <Route path="/recordings" element={<RecordingsPage />} />
-
-              {/* Schedule Page Route */}
-              <Route path="/schedule" element={<SchedulePage />} />
-
-              {/* Student Manager Page Route */}
-              <Route path="/student-manager" element={<StudentManager />} />
-
-              {/* Enrollments Page Route */}
-              <Route path="/enrollments" element={<Enrollments />} />
+              {/* Protected Routes */}
+              <Route path="/live-classes" element={
+                <ProtectedRoute>
+                  <LiveClasses />
+                </ProtectedRoute>
+              } />
               
-              {/* Login Route */}
-              <Route path="/login" element={<Login />} />
+              <Route path="/recordings" element={
+                <ProtectedRoute>
+                  <RecordingsPage />
+                </ProtectedRoute>
+              } />
               
-              {/* Admin Route */}
+              <Route path="/schedule" element={
+                <ProtectedRoute>
+                  <SchedulePage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/student-manager" element={
+                <ProtectedRoute>
+                  <StudentManager />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/enrollments" element={
+                <ProtectedRoute>
+                  <Enrollments />
+                </ProtectedRoute>
+              } />
+              
               <Route path="/admin" element={
-              localStorage.getItem('token') ? <Admin /> : <Navigate to="/login" />
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
               } />
             </Routes>
           </div>

@@ -57,7 +57,6 @@ const connectDB = async () => {
     });
     console.log('MongoDB connected');
 
-    // Create initial admin if none exists
     const adminExists = await User.exists({ username: 'admin' });
     if (!adminExists) {
       await User.create({
@@ -95,9 +94,7 @@ const authenticate = async (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
   next();
 };
 
@@ -121,9 +118,42 @@ const enrollmentSchema = Joi.object({
   roleId: Joi.number().required()
 });
 
-// ====================== API Endpoints ====================== //
+// ====================== API Endpoints with Swagger Docs ====================== //
 
-// Authentication routes
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: User login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
 app.post('/api/auth/login', apiLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -145,11 +175,52 @@ app.post('/api/auth/login', apiLimiter, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Get current user info
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 app.get('/api/auth/me', authenticate, (req, res) => {
   res.json(req.user);
 });
 
-// Admin routes
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get all users (Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 app.get('/api/users', authenticate, isAdmin, async (req, res) => {
   try {
     const users = await User.find().select('-password');
@@ -159,6 +230,30 @@ app.get('/api/users', authenticate, isAdmin, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     tags: [Admin]
+ *     summary: Delete a user (Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: User deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Server error
+ */
 app.delete('/api/users/:id', authenticate, isAdmin, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
@@ -168,7 +263,27 @@ app.delete('/api/users/:id', authenticate, isAdmin, async (req, res) => {
   }
 });
 
-// Existing BBB endpoints
+/**
+ * @swagger
+ * /api/getRecordings:
+ *   get:
+ *     tags: [BBB]
+ *     summary: Get BBB recordings
+ *     parameters:
+ *       - in: query
+ *         name: meetingID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Recordings data
+ *         content:
+ *           application/xml:
+ *             schema:
+ *               type: string
+ *       500:
+ *         description: BBB API error
+ */
 app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
   try {
     const { meetingID } = req.query;
@@ -182,14 +297,48 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
     const response = await fetch(bbbUrl);
     if (!response.ok) throw new Error(`BBB API Error: ${response.statusText}`);
     
-    res.set('Content-Type', 'application/xml');
-    res.send(await response.text());
+    res.set('Content-Type', 'application/xml').send(await response.text());
   } catch (error) {
     next(error);
   }
 });
 
-// Existing Moodle endpoints
+/**
+ * @swagger
+ * /api/searchStudents:
+ *   get:
+ *     tags: [Moodle]
+ *     summary: Search Moodle students
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: fullName
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Student list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   fullname:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Server error
+ */
 app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   try {
     const { error } = studentSearchSchema.validate(req.query);
@@ -223,6 +372,33 @@ app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/enrollStudent:
+ *   post:
+ *     tags: [Moodle]
+ *     summary: Enroll student in course
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *               courseId:
+ *                 type: integer
+ *               roleId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Enrollment successful
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Server error
+ */
 app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
   try {
     const { error } = enrollmentSchema.validate(req.body);
@@ -256,7 +432,33 @@ app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
   }
 });
 
-// Health endpoint
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     tags: [System]
+ *     summary: System health check
+ *     responses:
+ *       200:
+ *         description: Health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 timestamp:
+ *                   type: string
+ *                 nodeVersion:
+ *                   type: string
+ *                 dbStatus:
+ *                   type: string
+ *                 uptime:
+ *                   type: number
+ *                 memoryUsage:
+ *                   type: object
+ */
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'UP',
@@ -268,14 +470,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Static files with API exclusion
+// Static files and error handling
 app.use(express.static(path.join(__dirname, 'client/build'), {
   maxAge: '1y',
   immutable: true,
-  filter: (req) => !req.path.startsWith('/api')
-});
+  setHeaders: (res, path) => {
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
 
-// Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(500).json({
@@ -284,12 +487,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-// Server startup
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`API Docs available at http://localhost:${PORT}/api-docs`);
