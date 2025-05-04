@@ -10,6 +10,7 @@ import StudentManager from './StudentManager';
 import Enrollments from './Enrollments';
 import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
 import Admin from './Admin'
+import Login from './Login'
 
 const App = () => {
   return (
