@@ -302,42 +302,8 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/searchStudents:
- *   get:
- *     tags: [Moodle]
- *     summary: Search Moodle students
- *     parameters:
- *       - in: query
- *         name: email
- *         schema:
- *           type: string
- *       - in: query
- *         name: fullName
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Student list
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   fullname:
- *                     type: string
- *                   email:
- *                     type: string
- *       400:
- *         description: Invalid parameters
- *       500:
- *         description: Server error
- */
+/* API Routes for Student functions */
+
 // API route to search students
 app.get('/api/searchStudents', async (req, res) => {
   const { email, fullName } = req.query;
@@ -370,6 +336,152 @@ app.get('/api/searchStudents', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Route to get courses for a specific student by user ID
+app.get('/api/getStudentCourses', async (req, res) => {
+  const { userId } = req.query; // Get the userId from the query parameters
+
+  // If userId is not provided, return an error
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId parameter' });
+  }
+
+  try {
+    // Construct the Moodle API URL
+    const moodleUrl = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=core_enrol_get_users_courses&moodlewsrestformat=json&userid=${userId}`;
+
+    // Fetch the data from Moodle
+    const response = await fetch(moodleUrl);
+    const courses = await response.json();
+
+    // Check if the response is valid JSON or if it contains an error
+    if (response.ok) {
+      // Return the courses to the frontend
+      res.json(courses);
+    } else {
+      throw new Error('Failed to fetch courses from Moodle');
+    }
+  } catch (error) {
+    console.error('Error fetching student courses:', error);
+    res.status(500).json({ error: 'An error occurred while fetching student courses' });
+  }
+});
+
+
+// Search courses by course name
+app.get('/api/searchCourses', async (req, res) => {
+  const { courseName } = req.query;
+
+  if (!courseName) {
+    return res.status(400).json({ error: 'Course name is required' });
+  }
+
+  try {
+    // Construct the URL for the Moodle API request
+    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=11d9797670d74f22f8e4aa8483fab962&wsfunction=core_course_get_courses&moodlewsrestformat=json`;
+
+    // Debug log: Show the generated URL in the server logs
+    console.log('Generated Moodle API URL:', url);
+
+    // Fetch all courses from Moodle
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // Debug log: Show the fetched data or error in the logs
+    console.log('Response from Moodle API:', data);
+
+    if (!Array.isArray(data)) {
+      console.error('Unexpected API response:', data);
+      return res.status(500).json({ error: 'Invalid response from Moodle' });
+    }
+
+    // Filter courses based on the search query
+    const filteredCourses = data.filter((course) =>
+      course.fullname.toLowerCase().includes(courseName.toLowerCase())
+    );
+
+    // Debug log: Show the filtered courses
+    console.log('Filtered Courses:', filteredCourses);
+
+    // Send back the filtered courses
+    res.json(filteredCourses);
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).json({ error: 'Failed to retrieve courses' });
+  }
+});
+
+
+// API route to enroll students in courses
+app.post('/api/enrollStudent', async (req, res) => {
+  const { userId, courseId, roleId } = req.body;
+  const token = '4e212f3770c28ce6a34a057d6f684ca1'; // Replace with your token
+
+  try {
+    // Construct the URL
+    const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=enrol_manual_enrol_users&moodlewsrestformat=json`;
+
+    // Construct the body of the POST request
+    const body = new URLSearchParams({
+      'enrolments[0][roleid]': roleId,
+      'enrolments[0][userid]': userId,
+      'enrolments[0][courseid]': courseId
+    }).toString();
+
+    // Log the URL and body for debugging purposes
+    console.log('Moodle Enrollment URL:', url);
+    console.log('Request Body:', body);
+
+    // Make the request to Moodle
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      res.json({ success: true, message: 'Enrollment successful', data });
+    } else {
+      res.status(400).json({ success: false, message: data.message });
+    }
+  } catch (error) {
+    console.error('Error enrolling student:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
+// API route to unenroll a student from a course
+app.post('/api/unenrollStudent', async (req, res) => {
+  const { userId, courseId } = req.body;
+
+  const url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=4e212f3770c28ce6a34a057d6f684ca1&wsfunction=enrol_manual_unenrol_users&moodlewsrestformat=json`;
+
+  try {
+      const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+              'enrolments[0][userid]': userId,
+              'enrolments[0][courseid]': courseId,
+          }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+          throw new Error(data.message || 'Failed to unenroll');
+      }
+      res.status(200).json(data);
+  } catch (error) {
+      console.error('Error unenrolling student:', error);
+      res.status(500).json({ error: 'Failed to unenroll student' });
+  }
+});
+
 
 
 
