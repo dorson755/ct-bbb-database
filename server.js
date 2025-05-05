@@ -338,61 +338,39 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
  *       500:
  *         description: Server error
  */
-app.get('/api/searchStudents', apiLimiter, async (req, res) => {
+// API route to search students
+app.get('/api/searchStudents', async (req, res) => {
   const { email, fullName } = req.query;
 
-  // 1) Require at least one parameter
   if (!email && !fullName) {
-    return res
-      .status(400)
-      .json({ error: 'At least one search parameter is required' });
+    return res.status(400).json({ error: 'At least one search parameter is required' });
   }
 
-  // 2) Pull token and base URL from env
-  const token = process.env.MOODLE_TOKEN;
-  const base  = (process.env.MOODLE_URL || '').replace(/\/+$/, '');
+  const token = '11d9797670d74f22f8e4aa8483fab962'; // Replace with your actual token
 
-  // 3) Build the exact URL you know works
-  let url =
-    `${base}/webservice/rest/server.php` +
-    `?wstoken=${token}` +
-    `&wsfunction=core_user_get_users` +
-    `&moodlewsrestformat=json`;
-
+  let url = `https://cybertech242-online.com/webservice/rest/server.php?wstoken=${token}&wsfunction=core_user_get_users&moodlewsrestformat=json`;
+  
   if (email) {
     url += `&criteria[0][key]=email&criteria[0][value]=${encodeURIComponent(email)}`;
-  } else {
+  } else if (fullName) {
     url += `&criteria[0][key]=fullname&criteria[0][value]=${encodeURIComponent(fullName)}`;
   }
 
-  console.log('[searchStudents] fetching →', url);
-
   try {
-    // 4) Fetch and parse
     const response = await fetch(url);
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('[searchStudents] Moodle error:', text);
-      return res.status(502).json({ error: 'Moodle API Error', details: text });
-    }
-
     const data = await response.json();
 
-    // 5) If Moodle wraps results in a .users array, extract it
-    const students = Array.isArray(data.users) ? data.users : [];
-
-    // 6) Cache and return
-    if (students.length) {
-      moodleCache.set(`students:${JSON.stringify(req.query)}`, students);
-      return res.status(200).json(students);
+    if (data.users && data.users.length > 0) {
+      res.status(200).json(data.users);
     } else {
-      return res.status(404).json({ message: 'No users found' });
+      res.status(404).json({ message: 'No users found' });
     }
-  } catch (err) {
-    console.error('[searchStudents] unexpected error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (error) {
+    console.error('Error fetching student data:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 
