@@ -338,66 +338,62 @@ app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
  *       500:
  *         description: Server error
  */
-app.get('/api/searchStudents', apiLimiter, async (req, res, next) => {
+app.get('/api/searchStudents', apiLimiter, async (req, res) => {
+  const { email, fullName } = req.query;
+
+  // 1) Require at least one parameter
+  if (!email && !fullName) {
+    return res
+      .status(400)
+      .json({ error: 'At least one search parameter is required' });
+  }
+
+  // 2) Pull token and base URL from env
+  const token = process.env.MOODLE_TOKEN;
+  const base  = (process.env.MOODLE_URL || '').replace(/\/+$/, '');
+
+  // 3) Build the exact URL you know works
+  let url =
+    `${base}/webservice/rest/server.php` +
+    `?wstoken=${token}` +
+    `&wsfunction=core_user_get_users` +
+    `&moodlewsrestformat=json`;
+
+  if (email) {
+    url += `&criteria[0][key]=email&criteria[0][value]=${encodeURIComponent(email)}`;
+  } else {
+    url += `&criteria[0][key]=fullname&criteria[0][value]=${encodeURIComponent(fullName)}`;
+  }
+
+  console.log('[searchStudents] fetching →', url);
+
   try {
-    // 1) Validate
-    const { error } = studentSearchSchema.validate(req.query);
-    if (error) return res.status(400).json({ error: error.details[0].message });
-
-    // 2) Build URL (old string‐concat style you know works)
-    const base = process.env.MOODLE_URL.replace(/\/+$/, '');
-    const token = process.env.MOODLE_TOKEN;
-    const fn    = 'core_user_get_users';
-    const fmt   = 'json';
-    const key   = req.query.email ? 'email' : 'fullname';
-    const val   = encodeURIComponent(req.query.email || req.query.fullName);
-
-    const moodleUrl =
-      `${base}/webservice/rest/server.php` +
-      `?wstoken=${token}` +
-      `&wsfunction=${fn}` +
-      `&moodlewsrestformat=${fmt}` +
-      `&criteria[0][key]=${key}` +
-      `&criteria[0][value]=${val}`;
-
-    console.log('[searchStudents] fetching →', moodleUrl);
-
-    // 3) Fetch as text
-    const response = await fetch(moodleUrl);
-    const text = await response.text();
-    console.log('[searchStudents] status =', response.status);
-    console.log('[searchStudents] body snippet =', text.slice(0, 200).replace(/\s+/g, ' '), '…');
-
-    // 4) If Moodle errored, return its payload
+    // 4) Fetch and parse
+    const response = await fetch(url);
     if (!response.ok) {
-      return res
-        .status(502)
-        .json({ error: 'Moodle API Error', details: text });
+      const text = await response.text();
+      console.error('[searchStudents] Moodle error:', text);
+      return res.status(502).json({ error: 'Moodle API Error', details: text });
     }
 
-    // 5) Try parsing JSON—if it’s not valid JSON, catch below
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (parseErr) {
-      console.error('[searchStudents] JSON.parse failed:', parseErr);
-      console.error('[searchStudents] raw body:', text.slice(0, 500));
-      return res.status(502).json({
-        error: 'Invalid JSON from Moodle',
-        raw: text.slice(0, 200)
-      });
+    const data = await response.json();
+
+    // 5) If Moodle wraps results in a .users array, extract it
+    const students = Array.isArray(data.users) ? data.users : [];
+
+    // 6) Cache and return
+    if (students.length) {
+      moodleCache.set(`students:${JSON.stringify(req.query)}`, students);
+      return res.status(200).json(students);
+    } else {
+      return res.status(404).json({ message: 'No users found' });
     }
-
-    // 6) Cache and respond
-    const cacheKey = `students:${JSON.stringify(req.query)}`;
-    moodleCache.set(cacheKey, data);
-    res.json(data);
-
   } catch (err) {
     console.error('[searchStudents] unexpected error:', err);
-    next(err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 
