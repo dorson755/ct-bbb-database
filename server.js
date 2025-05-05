@@ -486,6 +486,42 @@ app.get('/api/deleteRecordings', async (req, res) => {
 /* API Routes for Student functions */
 /************************************/
 
+/**
+ * @swagger
+ * /api/searchStudents:
+ *   get:
+ *     summary: Search for students by email or full name
+ *     description: Queries the Moodle API to retrieve student information using either an email or full name.
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: false
+ *         description: Email address of the student to search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: fullName
+ *         required: false
+ *         description: Full name of the student to search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: A list of matching students
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       400:
+ *         description: At least one search parameter is required
+ *       404:
+ *         description: No users found
+ *       500:
+ *         description: Internal server error
+ */
+
 // API route to search students
 app.get('/api/searchStudents', async (req, res) => {
   const { email, fullName } = req.query;
@@ -519,6 +555,35 @@ app.get('/api/searchStudents', async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /api/getStudentCourses:
+ *   get:
+ *     summary: Get courses for a specific student
+ *     description: Retrieves all Moodle courses that a student (by user ID) is enrolled in.
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         description: The user ID of the student in Moodle
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of courses the student is enrolled in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       400:
+ *         description: Missing userId parameter
+ *       500:
+ *         description: An error occurred while fetching student courses
+ */
+
 // Route to get courses for a specific student by user ID
 app.get('/api/getStudentCourses', async (req, res) => {
   const { userId } = req.query; // Get the userId from the query parameters
@@ -549,6 +614,34 @@ app.get('/api/getStudentCourses', async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /api/searchCourses:
+ *   get:
+ *     summary: Search for Moodle courses by name
+ *     description: Retrieves and filters Moodle courses based on a partial or full course name match.
+ *     parameters:
+ *       - in: query
+ *         name: courseName
+ *         required: true
+ *         description: The name (or partial name) of the course to search for
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: A list of matching courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       400:
+ *         description: Course name is required
+ *       500:
+ *         description: Failed to retrieve courses
+ */
 
 // Search courses by course name
 app.get('/api/searchCourses', async (req, res) => {
@@ -594,6 +687,48 @@ app.get('/api/searchCourses', async (req, res) => {
 });
 
 
+/**
+ * @swagger
+ * /api/enrollStudent:
+ *   post:
+ *     summary: Enroll a student in a course
+ *     description: Enrolls a student in a specified course with a given role.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 description: The user ID of the student to enroll
+ *               courseId:
+ *                 type: integer
+ *                 description: The course ID in which the student should be enrolled
+ *               roleId:
+ *                 type: integer
+ *                 description: The role ID to assign to the student in the course (e.g., student, teacher)
+ *     responses:
+ *       200:
+ *         description: Enrollment was successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Enrollment successful"
+ *       400:
+ *         description: Bad request, likely due to missing or invalid parameters
+ *       500:
+ *         description: Internal server error
+ */
+
 // API route to enroll students in courses
 app.post('/api/enrollStudent', async (req, res) => {
   const { userId, courseId, roleId } = req.body;
@@ -635,6 +770,45 @@ app.post('/api/enrollStudent', async (req, res) => {
 });
 
 
+/**
+ * @swagger
+ * /api/unenrollStudent:
+ *   post:
+ *     summary: Unenroll a student from a course
+ *     description: Unenrolls a student from a specified course.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 description: The user ID of the student to unenroll
+ *               courseId:
+ *                 type: integer
+ *                 description: The course ID from which the student should be unenrolled
+ *     responses:
+ *       200:
+ *         description: Unenrollment was successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Student unenrolled successfully"
+ *       400:
+ *         description: Bad request, likely due to missing or invalid parameters
+ *       500:
+ *         description: Internal server error
+ */
+
 // API route to unenroll a student from a course
 app.post('/api/unenrollStudent', async (req, res) => {
   const { userId, courseId } = req.body;
@@ -666,68 +840,9 @@ app.post('/api/unenrollStudent', async (req, res) => {
 
 
 
-
-
-
-/**
- * @swagger
- * /api/enrollStudent:
- *   post:
- *     tags: [Moodle]
- *     summary: Enroll student in course
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: integer
- *               courseId:
- *                 type: integer
- *               roleId:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Enrollment successful
- *       400:
- *         description: Invalid input
- *       500:
- *         description: Server error
- */
-app.post('/api/enrollStudent', apiLimiter, async (req, res, next) => {
-  try {
-    const { error } = enrollmentSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
-
-    const url = new URL(`${process.env.MOODLE_URL}/webservice/rest/server.php`);
-    url.searchParams.append('wstoken', process.env.MOODLE_TOKEN);
-    url.searchParams.append('wsfunction', 'enrol_manual_enrol_users');
-    url.searchParams.append('moodlewsrestformat', 'json');
-
-    const body = new URLSearchParams({
-      'enrolments[0][roleid]': req.body.roleId,
-      'enrolments[0][userid]': req.body.userId,
-      'enrolments[0][courseid]': req.body.courseId
-    });
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Enrollment failed');
-    }
-
-    res.json({ success: true, message: 'Enrollment successful' });
-  } catch (error) {
-    next(error);
-  }
-});
+/************************/
+/* API for health check */
+/************************/
 
 /**
  * @swagger
