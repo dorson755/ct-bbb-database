@@ -262,47 +262,120 @@ app.delete('/api/users/:id', authenticate, isAdmin, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/getRecordings:
- *   get:
- *     tags: [BBB]
- *     summary: Get BBB recordings
- *     parameters:
- *       - in: query
- *         name: meetingID
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Recordings data
- *         content:
- *           application/xml:
- *             schema:
- *               type: string
- *       500:
- *         description: BBB API error
- */
-app.get('/api/getRecordings', apiLimiter, async (req, res, next) => {
-  try {
-    const { meetingID } = req.query;
-    const params = meetingID ? { meetingID } : {};
-    const checksum = generateChecksum('getRecordings', params);
-    
-    const bbbUrl = new URL(`${process.env.BBB_URL}/getRecordings`);
-    Object.entries(params).forEach(([key, val]) => bbbUrl.searchParams.set(key, val));
-    bbbUrl.searchParams.set('checksum', checksum);
+/**********************/
+/* API routes for BBB */
+/**********************/
 
-    const response = await fetch(bbbUrl);
-    if (!response.ok) throw new Error(`BBB API Error: ${response.statusText}`);
-    
-    res.set('Content-Type', 'application/xml').send(await response.text());
+// API route to get recordings
+app.get('/api/getRecordings', async (req, res) => {
+  const { meetingID } = req.query;
+  const apiCall = 'getRecordings';
+  const params = {};
+
+  if (meetingID) {
+    params['meetingID'] = meetingID;
+  }
+
+  const checksum = generateChecksum(apiCall, params);
+  const queryString = new URLSearchParams(params).toString();
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
+
+  console.log('Constructed BBB API URL:', bbbApiUrl);
+
+  try {
+    const response = await fetch(bbbApiUrl);
+    const data = await response.text();
+    res.send(data);
   } catch (error) {
-    next(error);
+    console.error('Error fetching recordings from BBB API:', error);
+    res.status(500).send('Error fetching recordings from BBB API');
   }
 });
 
+// API route to get meetings
+app.get('/api/getMeetings', async (req, res) => {
+  const apiCall = 'getMeetings';
+  const params = {};
+  const checksum = generateChecksum(apiCall, params);
+
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?checksum=${checksum}`;
+  console.log('Constructed BBB API URL for getMeetings:', bbbApiUrl);
+
+  try {
+    const response = await fetch(bbbApiUrl);
+    const data = await response.text();
+    res.send(data);
+  } catch (error) {
+    console.error('Error fetching meetings from BBB API:', error);
+    res.status(500).send('Error fetching meetings from BBB API');
+  }
+});
+
+// API route to join a meeting
+app.get('/api/joinMeeting', async (req, res) => {
+  const { fullName, meetingID, role } = req.query;
+
+  if (!fullName || !meetingID || !role) {
+    return res.status(400).send('Missing required parameters: fullName, meetingID, or role');
+  }
+
+  const apiCall = 'join';
+  const params = {
+    fullName,
+    meetingID,
+    role,
+    excludeFromDashboard: 'true',
+    redirect: 'true'
+  };
+
+  const checksum = generateChecksum(apiCall, params);
+  const queryString = new URLSearchParams(params).toString();
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
+
+  console.log('Constructed BBB Join API URL:', bbbApiUrl);
+
+  try {
+    res.send({ url: bbbApiUrl });
+  } catch (error) {
+    console.error('Error generating join URL for BBB:', error);
+    res.status(500).send('Error generating join URL');
+  }
+});
+
+// API route to delete recordings
+app.get('/api/deleteRecordings', async (req, res) => {
+  const { recordID } = req.query;
+
+  if (!recordID) {
+    return res.status(400).send('Missing recordID parameter');
+  }
+
+  const apiCall = 'deleteRecordings';
+  const params = { recordID };
+  const checksum = generateChecksum(apiCall, params);
+  const queryString = new URLSearchParams(params).toString();
+  const bbbApiUrl = `${BBB_URL}/${apiCall}?${queryString}&checksum=${checksum}`;
+
+  console.log('Constructed BBB Delete API URL:', bbbApiUrl);
+
+  try {
+    const response = await fetch(bbbApiUrl);
+    if (response.ok) {
+      res.send('Recordings deleted successfully');
+    } else {
+      res.status(response.status).send('Error deleting recordings');
+    }
+  } catch (error) {
+    console.error('Error deleting recordings from BBB API:', error);
+    res.status(500).send('Error deleting recordings from BBB API');
+  }
+});
+
+
+
+/************************************/
 /* API Routes for Student functions */
+/************************************/
 
 // API route to search students
 app.get('/api/searchStudents', async (req, res) => {
