@@ -1,21 +1,35 @@
-// src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import './App.css'; // Import custom styles
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
+import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import LiveClasses from './LiveClasses'; // Import Live Classes component
-import RecordingsPage from './RecordingsPage'; // Import Recordings Page component
-import SchedulePage from './SchedulePage'; // Import Schedule Page component
+import LiveClasses from './LiveClasses';
+import RecordingsPage from './RecordingsPage';
+import SchedulePage from './SchedulePage';
 import StudentManager from './StudentManager';
 import Enrollments from './Enrollments';
-import { NotificationProvider } from './NotificationContext'; // Import Notification Provider
+import { NotificationProvider } from './NotificationContext';
+import Admin from './Admin';
+import Login from './Login';
+
+const ProtectedRoute = ({ children, requireAdmin = false }) => {
+  const token = localStorage.getItem('token');
+  const userRole = token ? JSON.parse(atob(token.split('.')[1]))?.role : null;
+
+  if (!token) return <Navigate to="/login" replace />;
+  if (requireAdmin && userRole !== 'admin') return <Navigate to="/" replace />;
+  return children;
+};
 
 const App = () => {
+  const logout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  };
+
   return (
     <Router>
       <NotificationProvider>
         <div className="app-container">
-          {/* Sidebar */}
           <div className="sidebar">
             <ul>
               <li><Link to="/"><img src='/assets/home.png' alt="Home" className="sidebar-logo" /></Link></li>
@@ -24,18 +38,20 @@ const App = () => {
               <li><Link to="/schedule"><img src='/assets/schedule.png' alt="Schedule" className="sidebar-logo" /></Link></li>
               <li><Link to="/student-manager"><img src='/assets/search.png' alt="Student Manager" className="sidebar-logo" /></Link></li>
               <li><Link to="/enrollments"><img src='/assets/enrollments.png' alt="Enrollments" className="sidebar-logo" /></Link></li>
-              <li><a href='https://www.cybertech242.com' target='_blank' rel="noreferrer">
-                <img src='/assets/site.png' alt="Main Site" className="sidebar-logo" />
-              </a></li>
+              <li><button onClick={logout} className="logout-button">
+                <img src='/assets/logout.png' alt="Logout" className="sidebar-logo" />
+              </button></li>
             </ul>
           </div>
 
-          {/* Main Content with Routes */}
           <div className="main-content">
             <Routes>
-              {/* Home Route */}
+              <Route path="/login" element={<Login />} />
+              
               <Route path="/" element={
-                <>
+                <ProtectedRoute>
+                  {/* Home content */}
+                  <>
                   <h1>Homepage</h1>
                   <div className="card-container">
                     <Link to="/live-classes">
@@ -75,23 +91,17 @@ const App = () => {
                       </div>
                     </a>
                   </div>
-                </>
+                  </>
+                </ProtectedRoute>
               } />
 
-              {/* Live Classes Route */}
-              <Route path="/live-classes" element={<LiveClasses />} />
-
-              {/* Recordings Page Route */}
-              <Route path="/recordings" element={<RecordingsPage />} />
-
-              {/* Schedule Page Route */}
-              <Route path="/schedule" element={<SchedulePage />} />
-
-              {/* Student Manager Page Route */}
-              <Route path="/student-manager" element={<StudentManager />} />
-
-              {/* Enrollments Page Route */}
-              <Route path="/enrollments" element={<Enrollments />} />
+              {/* Protected routes */}
+              <Route path="/live-classes" element={<ProtectedRoute><LiveClasses /></ProtectedRoute>} />
+              <Route path="/recordings" element={<ProtectedRoute><RecordingsPage /></ProtectedRoute>} />
+              <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
+              <Route path="/student-manager" element={<ProtectedRoute><StudentManager /></ProtectedRoute>} />
+              <Route path="/enrollments" element={<ProtectedRoute><Enrollments /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             </Routes>
           </div>
         </div>

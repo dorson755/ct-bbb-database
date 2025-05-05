@@ -39,7 +39,6 @@ const StudentDetailsComponent = ({ selectedStudent }) => {
         <div>
           <h2>{studentWithCourses.fullname}'s Details</h2>
           <p>Email: {studentWithCourses.email || 'N/A'}</p>
-          <p>Phone: {studentWithCourses.phone || 'N/A'}</p>
 
           <h3>Enrolled Courses</h3>
           {studentWithCourses.courses.length > 0 ? (
