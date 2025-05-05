@@ -266,6 +266,30 @@ app.delete('/api/users/:id', authenticate, isAdmin, async (req, res) => {
 /* API routes for BBB */
 /**********************/
 
+/**
+ * @swagger
+ * /api/getRecordings:
+ *   get:
+ *     summary: Retrieve recordings from BigBlueButton (BBB)
+ *     description: Fetches meeting recordings from the BigBlueButton server using the provided meetingID. If no meetingID is provided, it may fetch all recordings depending on server settings.
+ *     parameters:
+ *       - in: query
+ *         name: meetingID
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The ID of the meeting to retrieve recordings for
+ *     responses:
+ *       200:
+ *         description: XML response with meeting recordings
+ *         content:
+ *           application/xml:
+ *             schema:
+ *               type: string
+ *       500:
+ *         description: Internal server error while fetching recordings
+ */
+
 // API route to get recordings
 app.get('/api/getRecordings', async (req, res) => {
   const { meetingID } = req.query;
@@ -292,6 +316,25 @@ app.get('/api/getRecordings', async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /api/getMeetings:
+ *   get:
+ *     summary: Retrieve all active BigBlueButton (BBB) meetings
+ *     description: Calls the BBB API to get a list of all currently running meetings.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved list of active meetings
+ *         content:
+ *           application/xml:
+ *             schema:
+ *               type: string
+ *               description: XML response from BBB with meeting details
+ *       500:
+ *         description: Internal server error while fetching meetings
+ */
+
 // API route to get meetings
 app.get('/api/getMeetings', async (req, res) => {
   const apiCall = 'getMeetings';
@@ -310,6 +353,49 @@ app.get('/api/getMeetings', async (req, res) => {
     res.status(500).send('Error fetching meetings from BBB API');
   }
 });
+
+
+/**
+ * @swagger
+ * /api/joinMeeting:
+ *   get:
+ *     summary: Generate join URL for a BigBlueButton (BBB) meeting
+ *     description: Returns a join URL for a BBB meeting for a user based on their full name, meeting ID, and role.
+ *     parameters:
+ *       - in: query
+ *         name: fullName
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Full name of the user joining the meeting
+ *       - in: query
+ *         name: meetingID
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the meeting to join
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The role of the user (e.g., moderator, viewer)
+ *     responses:
+ *       200:
+ *         description: Successfully generated BBB join URL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   description: The generated join URL
+ *       400:
+ *         description: Missing required parameters
+ *       500:
+ *         description: Internal server error while generating join URL
+ */
 
 // API route to join a meeting
 app.get('/api/joinMeeting', async (req, res) => {
@@ -341,6 +427,29 @@ app.get('/api/joinMeeting', async (req, res) => {
     res.status(500).send('Error generating join URL');
   }
 });
+
+
+/**
+ * @swagger
+ * /api/deleteRecordings:
+ *   get:
+ *     summary: Delete one or more BigBlueButton (BBB) recordings
+ *     description: Sends a request to the BBB API to delete recordings using a given recordID.
+ *     parameters:
+ *       - in: query
+ *         name: recordID
+ *         required: true
+ *         description: Comma-separated list of recording IDs to delete
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Recordings deleted successfully
+ *       400:
+ *         description: Missing recordID parameter
+ *       500:
+ *         description: Error deleting recordings from BBB API
+ */
 
 // API route to delete recordings
 app.get('/api/deleteRecordings', async (req, res) => {
